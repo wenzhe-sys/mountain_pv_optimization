@@ -1,0 +1,41 @@
+# Python相关
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+venv/
+.venv/
+env/
+
+# VS Code相关
+.vscode/
+*.code-workspace
+.history/
+*.log
+
+# 数据相关（仅上传小样本，大文件不上传）
+data/raw/*.zip
+data/raw/*.tif  # DEM地形原始文件（大文件）
+data/processed/*.npy.bak
+data/results/*.log
+
+# 其他
+.DS_Store
+*.pth.bak
+*.csv.bak
