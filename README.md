@@ -5,9 +5,9 @@
 
 ## 技术栈
 - 编程语言：Python 3.9+
-- 核心库：Gurobi（运筹优化）、PyTorch（强化学习）、GeoPandas（地形处理）、Matplotlib/Plotly（可视化）
+- 核心库：PyTorch（强化学习/优化）、NumPy/Pandas（数据处理）、scikit-learn（聚类）、Matplotlib/Plotly（可视化）
 - 版本控制：Git + GitHub
-- 开发工具：VS Code
+- 开发工具：VS Code / Cursor
 
 ## 目录结构说明
 | 文件夹/文件         | 作用                                                                 |
@@ -23,17 +23,15 @@
 
 ## 协作规则
 1. 分支管理：
-   - main：主分支（仅存放稳定代码，禁止直接提交）
-   - dev：开发分支（所有成员在dev分支开发，定期合并到main）
-   - 个人分支：每人创建个人分支（如`feature/cutting-partition-youxi`），开发完成后合并到dev
+   - main：主分支，存放最新稳定代码
+   - 个人分支：从最新的 main 分支 checkout 出个人分支（如`feature/cutting-partition-youxi`），开发完成后创建 PR 合并回 main
 
 2. 提交规范：
    - 提交信息格式：`[模块名] 操作：具体描述`
    - 示例：`[模块一] 新增：Benders分解主问题编码`、`[工具类] 修复：地形数据网格转换bug`
 
 3. 协作流程：
-   - 首次开发：克隆仓库→创建个人分支→开发→提交→推送个人分支→发起Pull Request（PR）到dev分支
-   - 每日开发前：拉取（pull）dev分支最新代码，避免冲突
+   - 开发前：拉取 main 最新代码 → 从 main 创建个人分支 → 开发 → 提交 → 推送个人分支 → 发起 PR 到 main → 审核通过后合并
    - 冲突处理：遇到冲突时，优先本地解决，无法解决则联系相关成员协同处理
 
 4. 注意事项：
