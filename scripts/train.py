@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 S2V-DQN 训练管线 CLI
 
@@ -13,6 +14,12 @@ S2V-DQN 训练管线 CLI
 
 import os
 import sys
+
+# 强制 stdout 无缓冲，确保日志实时输出
+os.environ["PYTHONUNBUFFERED"] = "1"
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(line_buffering=True)
+
 import json
 import time
 import glob
@@ -84,13 +91,16 @@ def train(args):
         return
 
     # 初始化智能体
+    # CPU 模式用较小 batch 加速；GPU 模式用标准 batch
+    batch_size = 8 if device == "cpu" else 32
+
     agent = DQNPartitionAgent(
         node_feature_dim=5, hidden_dim=64,
         n_iterations=4, context_dim=4,
         lr=args.lr, gamma=0.99,
         epsilon_start=1.0, epsilon_end=0.05,
         epsilon_decay=args.epsilon_decay,
-        buffer_size=10000, batch_size=32,
+        buffer_size=10000, batch_size=batch_size,
         target_update=100, device=device
     )
 
@@ -122,8 +132,10 @@ def train(args):
     for epoch in range(start_epoch, args.epochs + 1):
         epoch_start = time.time()
 
-        # 训练一个 epoch
-        stats = agent.train_epoch(instances, epoch)
+        # 训练一个 epoch（每 4 步学习一次，首 epoch 显示算例详情）
+        verbose_inst = (epoch == start_epoch)  # 第一轮显示每个算例进度
+        stats = agent.train_epoch(instances, epoch, learn_every=4,
+                                    verbose_instances=verbose_inst)
 
         epoch_time = time.time() - epoch_start
         elapsed = time.time() - global_start

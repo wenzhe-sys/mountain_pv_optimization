@@ -407,13 +407,16 @@ class DQNPartitionAgent:
 
         return avg_loss.item()
 
-    def train_epoch(self, instances: List[Dict], epoch: int) -> Dict:
+    def train_epoch(self, instances: List[Dict], epoch: int,
+                     learn_every: int = 4, verbose_instances: bool = False) -> Dict:
         """
         训练一个 epoch（遍历所有算例）。
 
         Args:
             instances: 算例列表
             epoch: 当前 epoch 编号
+            learn_every: 每 N 步学习一次（降低 CPU 开销）
+            verbose_instances: 是否打印每个算例的进度
 
         Returns:
             训练统计信息
@@ -421,8 +424,11 @@ class DQNPartitionAgent:
         epoch_rewards = []
         epoch_losses = []
         epoch_constraints = {"capacity": 0, "connected": 0, "perimeter": 0, "total_zones": 0}
+        step_counter = 0  # 全局步数计数器
 
-        for inst in instances:
+        for inst_idx, inst in enumerate(instances):
+            inst_id = inst["instance_info"]["instance_id"]
+
             # 构建图和环境
             graph = build_adjacency_graph(inst["pva_list"],
                                            inst["terrain_data"]["grid_size"])
@@ -439,18 +445,23 @@ class DQNPartitionAgent:
             state = env.reset()
             episode_reward = 0.0
             episode_losses = []
+            episode_steps = 0
 
             while not env.done:
                 action = self.select_action(state, training=True)
                 next_state, reward, done = env.step(action)
                 self.store_transition(state, action, reward, next_state, done)
 
-                loss = self.learn()
-                if loss is not None:
-                    episode_losses.append(loss)
+                # 每 learn_every 步学习一次（大幅降低 CPU 开销）
+                step_counter += 1
+                if step_counter % learn_every == 0:
+                    loss = self.learn()
+                    if loss is not None:
+                        episode_losses.append(loss)
 
                 state = next_state
                 episode_reward += reward
+                episode_steps += 1
 
             epoch_rewards.append(episode_reward)
             if episode_losses:
@@ -470,6 +481,12 @@ class DQNPartitionAgent:
                     epoch_constraints["connected"] += 1
                 if detail["perimeter_ok"]:
                     epoch_constraints["perimeter"] += 1
+
+            if verbose_instances:
+                sizes = [len(z) for z in env.zones]
+                print(f"    算例 {inst_id}: {episode_steps}步, "
+                      f"奖励={episode_reward:.2f}, "
+                      f"分区={sizes}", flush=True)
 
         # 汇总统计
         avg_reward = np.mean(epoch_rewards) if epoch_rewards else 0.0
