@@ -55,7 +55,7 @@ class PartitionValidator:
                  inverter_capacity: float = 320.0,
                  min_load_rate: float = 0.85,
                  min_panels: int = 18, max_panels: int = 26,
-                 max_panel_diff: int = 2,
+                 max_panel_diff: int = 4,
                  perimeter_lb: float = 60.0, perimeter_ub: float = 90.0):
         """
         Args:

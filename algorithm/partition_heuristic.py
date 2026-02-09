@@ -41,7 +41,7 @@ class GreedyPartitioner:
     def __init__(self, graph: nx.Graph, n_zones: int,
                  min_panels: int = 18, max_panels: int = 26,
                  perimeter_lb: float = 60.0, perimeter_ub: float = 90.0,
-                 max_panel_diff: int = 2,
+                 max_panel_diff: int = 4,
                  local_search_iters: int = 100,
                  random_seed: int = 42):
         """
@@ -88,6 +88,9 @@ class GreedyPartitioner:
 
         # 阶段 2.5：连通性修复
         zones = self._repair_connectivity(zones)
+
+        # 阶段 2.6：负载平衡调整（从大分区移面板到小分区）
+        zones = self._rebalance(zones)
 
         # 阶段 3：局部搜索优化
         zones = self._local_search(zones)
@@ -144,15 +147,22 @@ class GreedyPartitioner:
         remaining = self.all_panels - assigned
 
         # 轮流扩展，每轮每个分区尝试加一个节点
+        # 关键：用 target_size 限制每轮扩展，确保负载平衡
         max_rounds = len(self.all_panels)  # 安全上限
         for _ in range(max_rounds):
             if not remaining:
                 break
 
             progress_made = False
-            for i in range(self.n_zones):
+            # 按当前大小从小到大排序，优先扩展较小的分区
+            zone_order = sorted(range(self.n_zones), key=lambda i: len(zones[i]))
+            for i in zone_order:
                 if not remaining:
                     break
+                # 平衡控制：当前分区不能比最小分区大太多
+                min_size = min(len(z) for z in zones)
+                if len(zones[i]) > min_size + 1 and len(zones[i]) >= self.min_panels:
+                    continue  # 让小分区先追上来
                 if len(zones[i]) >= self.max_panels:
                     continue
 
@@ -281,6 +291,75 @@ class GreedyPartitioner:
                 zones[closest_zone].add(panel)
                 remaining.discard(panel)
 
+    def _rebalance(self, zones: List[Set[str]]) -> List[Set[str]]:
+        """
+        负载平衡调整：在所有相邻分区对之间移动边界面板。
+
+        策略：反复找到面板数最多的分区，从其边界移一个面板到
+        任何相邻的、面板数更少的分区。持续直到差异 <= max_panel_diff。
+        """
+        max_iters = 500
+        for _ in range(max_iters):
+            sizes = [len(z) for z in zones]
+            diff = max(sizes) - min(sizes)
+            if diff <= self.max_panel_diff:
+                break
+
+            # 从最大的分区开始尝试
+            sorted_indices = sorted(range(self.n_zones), key=lambda i: len(zones[i]), reverse=True)
+            moved = False
+
+            for src_idx in sorted_indices:
+                if moved:
+                    break
+                if len(zones[src_idx]) <= self.target_size:
+                    continue  # 不从已经在目标大小以下的分区移出
+
+                boundary = get_boundary_nodes(self.graph, zones[src_idx])
+                # 按与分区重心距离从远到近排序（优先移出边缘节点）
+                center_r = np.mean([self.graph.nodes[n]["row"] for n in zones[src_idx]])
+                center_c = np.mean([self.graph.nodes[n]["col"] for n in zones[src_idx]])
+                boundary = sorted(boundary, key=lambda n: -(
+                    abs(self.graph.nodes[n]["row"] - center_r) +
+                    abs(self.graph.nodes[n]["col"] - center_c)
+                ))
+
+                for node in boundary:
+                    if moved:
+                        break
+                    # 找这个节点邻居所在的所有其他分区
+                    for dst_idx in range(self.n_zones):
+                        if dst_idx == src_idx:
+                            continue
+                        if len(zones[dst_idx]) >= len(zones[src_idx]) - 1:
+                            continue  # 目标分区不能比源分区更大
+
+                        # 检查 node 是否与 dst 分区相邻
+                        adjacent = any(nb in zones[dst_idx] for nb in self.graph.neighbors(node))
+                        if not adjacent:
+                            continue
+
+                        # 检查移除后源分区仍连通
+                        test_src = zones[src_idx] - {node}
+                        if not check_connectivity(self.graph, test_src):
+                            continue
+
+                        # 检查加入后目标分区仍连通
+                        test_dst = zones[dst_idx] | {node}
+                        if not check_connectivity(self.graph, test_dst):
+                            continue
+
+                        # 执行移动
+                        zones[src_idx].remove(node)
+                        zones[dst_idx].add(node)
+                        moved = True
+                        break
+
+            if not moved:
+                break  # 无法继续改善
+
+        return zones
+
     def _repair_connectivity(self, zones: List[Set[str]]) -> List[Set[str]]:
         """
         修复分区连通性：将非连通的小分量移到相邻分区。
@@ -390,6 +469,12 @@ class GreedyPartitioner:
 
                 # 检查大小约束
                 if len(new_zones[zone_idx]) < self.min_panels:
+                    continue
+
+                # 检查负载平衡约束（不能让差距变大）
+                new_sizes = [len(z) for z in new_zones]
+                new_diff = max(new_sizes) - min(new_sizes)
+                if new_diff > self.max_panel_diff:
                     continue
 
                 # 计算新周长

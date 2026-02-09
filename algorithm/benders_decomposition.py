@@ -139,8 +139,8 @@ class BendersDecomposition:
 
             lb = cutting_result.objective_value if cutting_result.status == "Optimal" else lb
 
-            # ─── 步骤 2：求解子问题（分区）───
-            partition_result = self._solve_subproblem()
+            # ─── 步骤 2：求解子问题（分区，多种子尝试）───
+            partition_result = self._solve_subproblem(iteration)
             last_partition_result = partition_result
 
             # ─── 步骤 3：生成割平面 ───
@@ -200,18 +200,38 @@ class BendersDecomposition:
         # 构建 M1-Output
         return self._build_output(best_cutting_result, best_partition_result)
 
-    def _solve_subproblem(self) -> PartitionResult:
-        """求解分区子问题（启发式或 DQN）。"""
+    def _solve_subproblem(self, iteration: int = 0) -> PartitionResult:
+        """
+        求解分区子问题（启发式或 DQN）。
+
+        启发式方法使用多随机种子策略：每次迭代用不同种子，
+        并从中选取最优（可行且周长最小的）方案。
+        """
         if self.partition_solver == "dqn" and self._dqn_solver is not None:
-            return self._dqn_solver.solve(self.graph, self.p)
-        else:
+            return self._dqn_solver.solve(self.graph, self.p,
+                                           {"LB": self.LB, "UB": self.UB_perimeter})
+
+        # 多种子尝试：每次迭代尝试多个种子，选最优
+        best_result = None
+        seeds = [iteration * 10 + s for s in range(5)]  # 每次迭代 5 个种子
+
+        for seed in seeds:
             partitioner = GreedyPartitioner(
                 self.graph, n_zones=self.p,
                 min_panels=18, max_panels=26,
                 perimeter_lb=self.LB, perimeter_ub=self.UB_perimeter,
-                local_search_iters=200
+                local_search_iters=200,
+                random_seed=seed
             )
-            return partitioner.solve()
+            result = partitioner.solve()
+
+            if best_result is None:
+                best_result = result
+            elif result.is_feasible and (not best_result.is_feasible or
+                                          result.total_perimeter < best_result.total_perimeter):
+                best_result = result
+
+        return best_result
 
     def _generate_feasibility_cut(self, cutting_result: CuttingResult,
                                     partition_result: PartitionResult) -> Dict:
