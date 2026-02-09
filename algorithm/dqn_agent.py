@@ -460,23 +460,22 @@ class DQNPartitionAgent:
             gd = GraphData(graph, str(self.device))
             gid = self.gset.push(gd)
 
-            # 分 K 轮构建 K 个分区
+            # 分 K 轮构建 K 个分区（所有分区都由 DQN 决策）
             excluded_indices = set()
             zones = []
             instance_reward = 0.0
             instance_losses = []
 
             for k in range(n_zones):
-                # 最后一个分区直接收集剩余节点
-                if k == n_zones - 1:
-                    remaining = {gd.nodes[i] for i in range(gd.n_nodes)
-                                 if i not in excluded_indices}
-                    zones.append(remaining)
-                    break
+                remaining_count = n_nodes - len(excluded_indices)
+                zones_left = n_zones - k
+                current_target = remaining_count // zones_left
+                current_max = min(26, remaining_count - (zones_left - 1) * 18) if zones_left > 1 else remaining_count
 
                 env = PartitionEnv(
-                    gd, target_size=target_size,
-                    min_size=18, max_size=26,
+                    gd, target_size=current_target,
+                    min_size=min(18, remaining_count),
+                    max_size=current_max,
                     excluded=excluded_indices
                 )
                 state = env.reset()
@@ -501,6 +500,11 @@ class DQNPartitionAgent:
 
                 instance_reward += episode_reward
                 zone_nodes = env.get_zone_nodes()
+                # 最后一个分区补充剩余节点
+                if k == n_zones - 1:
+                    for i in range(gd.n_nodes):
+                        if i not in excluded_indices and i not in env.current_zone_indices:
+                            zone_nodes.add(gd.nodes[i])
                 zones.append(zone_nodes)
                 excluded_indices |= env.current_zone_indices
 
@@ -554,7 +558,7 @@ class DQNPartitionAgent:
 
     def solve(self, graph: nx.Graph, n_zones: int,
               pva_params: Dict = None) -> PartitionResult:
-        """推理：用训练好的策略构建分区方案。"""
+        """推理：用训练好的策略构建分区方案。所有分区都由 DQN 决策。"""
         if pva_params is None:
             pva_params = {"LB": 60.0, "UB": 90.0}
 
@@ -566,14 +570,16 @@ class DQNPartitionAgent:
         zones = []
 
         for k in range(n_zones):
-            if k == n_zones - 1:
-                remaining = {gd.nodes[i] for i in range(gd.n_nodes)
-                             if i not in excluded_indices}
-                zones.append(remaining)
-                break
+            remaining_count = n_nodes - len(excluded_indices)
+            zones_left = n_zones - k
 
-            env = PartitionEnv(gd, target_size=target_size,
-                                min_size=18, max_size=26,
+            # 动态调整目标大小，确保剩余面板能均匀分配
+            current_target = remaining_count // zones_left
+            current_max = min(26, remaining_count - (zones_left - 1) * 18) if zones_left > 1 else remaining_count
+
+            env = PartitionEnv(gd, target_size=current_target,
+                                min_size=min(18, remaining_count),
+                                max_size=current_max,
                                 excluded=excluded_indices)
             state = env.reset()
 
@@ -584,8 +590,18 @@ class DQNPartitionAgent:
                 action = self.select_action(gd, state, epsilon=0.0, valid_actions=valid)
                 state, _, _ = env.step(action)
 
-            zones.append(env.get_zone_nodes())
+            zone_nodes = env.get_zone_nodes()
+            # 如果是最后一个分区且还有剩余，补进来
+            if k == n_zones - 1:
+                for i in range(gd.n_nodes):
+                    if i not in excluded_indices and i not in env.current_zone_indices:
+                        zone_nodes.add(gd.nodes[i])
+
+            zones.append(zone_nodes)
             excluded_indices |= env.current_zone_indices
+            # 补充最后分区新加的节点到 excluded
+            if k == n_zones - 1:
+                excluded_indices |= {gd.node_to_idx[n] for n in zone_nodes if n in gd.node_to_idx}
 
         validator = PartitionValidator(
             graph, n_zones, min_panels=18, max_panels=26,
@@ -595,6 +611,248 @@ class DQNPartitionAgent:
         result = validator.validate(zones)
         result.solver_method = "dqn"
         return result
+
+    # ─── 专家经验生成与行为克隆 ───
+
+    def generate_expert_data(self, instances: List[Dict],
+                               n_runs_per_instance: int = 60,
+                               only_feasible: bool = True) -> List[Dict]:
+        """
+        用启发式生成专家经验，拆解为 (state, action) 动作序列。
+
+        启发式（GreedyPartitioner）产出的可行分区方案就是"专家方案"。
+        将专家方案倒推为一步步的动作选择序列，供行为克隆使用。
+
+        Args:
+            instances: 算例列表
+            n_runs_per_instance: 每个算例跑多少次（不同随机种子）
+            only_feasible: 是否只保留可行方案
+
+        Returns:
+            专家轨迹列表，每条轨迹包含 {gid, transitions: [(state, action), ...]}
+        """
+        from algorithm.partition_heuristic import GreedyPartitioner
+
+        expert_trajectories = []
+        total_feasible = 0
+        total_runs = 0
+
+        for inst in instances:
+            inst_id = inst["instance_info"]["instance_id"]
+            graph = build_adjacency_graph(inst["pva_list"],
+                                           inst["terrain_data"]["grid_size"])
+            n_zones = inst["equipment_params"]["inverter"]["p"]
+            n_nodes = inst["instance_info"]["n_nodes"]
+            target_size = n_nodes // n_zones
+            pva_params = inst["pva_params"]
+
+            gd = GraphData(graph, str(self.device))
+            gid = self.gset.push(gd)
+
+            for seed in range(n_runs_per_instance):
+                total_runs += 1
+                partitioner = GreedyPartitioner(
+                    graph, n_zones, random_seed=seed,
+                    min_panels=18, max_panels=26,
+                    perimeter_lb=pva_params["LB"],
+                    perimeter_ub=pva_params["UB"],
+                    local_search_iters=200
+                )
+                result = partitioner.solve()
+
+                if only_feasible and not result.is_feasible:
+                    continue
+
+                total_feasible += 1
+
+                # 将分区方案拆解为动作序列
+                for zone_nodes in result.zones:
+                    transitions = self._zone_to_trajectory(gd, zone_nodes, n_zones)
+                    if transitions:
+                        expert_trajectories.append({
+                            "gid": gid,
+                            "transitions": transitions,
+                        })
+
+        print(f"  专家经验生成完成: {total_runs} 次运行, "
+              f"{total_feasible} 个可行方案, "
+              f"{len(expert_trajectories)} 条轨迹", flush=True)
+
+        return expert_trajectories
+
+    def _zone_to_trajectory(self, gd: GraphData, zone_nodes: Set[str],
+                              n_zones: int) -> List[Tuple[torch.Tensor, int]]:
+        """
+        将一个分区方案（一组节点）拆解为动作序列。
+
+        策略：从分区的某个"边缘"节点开始，用 BFS 顺序重构添加过程。
+        每一步记录 (当前state, 选择的action)。
+
+        Args:
+            gd: 图数据
+            zone_nodes: 分区中的面板 ID 集合
+            n_zones: 分区总数
+
+        Returns:
+            动作序列 [(state_tensor, action_index), ...]
+        """
+        # 将面板 ID 转为索引
+        zone_indices = set()
+        for node_name in zone_nodes:
+            if node_name in gd.node_to_idx:
+                zone_indices.add(gd.node_to_idx[node_name])
+
+        if len(zone_indices) < 2:
+            return []
+
+        # 用 BFS 从重心最近的节点开始，确定添加顺序
+        zone_list = list(zone_indices)
+        rows = [gd.graph.nodes[gd.nodes[i]]["row"] for i in zone_list]
+        cols = [gd.graph.nodes[gd.nodes[i]]["col"] for i in zone_list]
+        center_r = np.mean(rows)
+        center_c = np.mean(cols)
+
+        # 找最靠近重心的节点作为起点
+        start_idx = min(zone_list, key=lambda i: (
+            abs(gd.graph.nodes[gd.nodes[i]]["row"] - center_r) +
+            abs(gd.graph.nodes[gd.nodes[i]]["col"] - center_c)
+        ))
+
+        # BFS 确定添加顺序
+        ordered = []
+        visited = {start_idx}
+        queue = deque([start_idx])
+        while queue:
+            current = queue.popleft()
+            ordered.append(current)
+            # 找 current 在图中的邻居中属于 zone 但未访问的
+            for j in zone_indices:
+                if j not in visited and gd.adj[current, j].item() > 0:
+                    visited.add(j)
+                    queue.append(j)
+
+        # 如果 BFS 没覆盖所有节点（不连通），追加剩余
+        for idx in zone_indices:
+            if idx not in visited:
+                ordered.append(idx)
+
+        # 构建 (state, action) 序列
+        transitions = []
+        state = torch.zeros(gd.n_nodes, dtype=torch.long, device=gd.device)
+
+        for action_idx in ordered:
+            transitions.append((state.clone(), action_idx))
+            state[action_idx] = 1
+
+        return transitions
+
+    def pretrain_from_expert(self, expert_trajectories: List[Dict],
+                               n_epochs: int = 50,
+                               lr: float = 1e-3) -> List[float]:
+        """
+        行为克隆预训练：用交叉熵损失让 DQN 模仿专家的动作选择。
+
+        对每个 (state, expert_action) 对：
+          1. 用 S2V 编码 state → 得到所有节点嵌入
+          2. 用 Q 函数计算所有节点的 Q 值
+          3. 让 expert_action 对应的 Q 值最高（交叉熵损失）
+
+        Args:
+            expert_trajectories: generate_expert_data() 的输出
+            n_epochs: 训练轮数
+            lr: 学习率
+
+        Returns:
+            每轮的平均损失
+        """
+        # 收集所有 (gid, state, action) 样本
+        all_samples = []
+        for traj in expert_trajectories:
+            gid = traj["gid"]
+            for state, action in traj["transitions"]:
+                all_samples.append((gid, state, action))
+
+        if not all_samples:
+            print("  ⚠ 无专家样本可用", flush=True)
+            return []
+
+        print(f"  行为克隆样本数: {len(all_samples)}", flush=True)
+
+        # 用独立优化器（不干扰 RL 的优化器状态）
+        bc_optimizer = optim.Adam(
+            list(self.s2v_policy.parameters()) + list(self.q_policy.parameters()),
+            lr=lr
+        )
+
+        epoch_losses = []
+
+        for epoch in range(1, n_epochs + 1):
+            random.shuffle(all_samples)
+            total_loss = 0.0
+            n_batches = 0
+
+            # mini-batch 训练
+            batch_size = 32
+            for i in range(0, len(all_samples), batch_size):
+                batch = all_samples[i:i + batch_size]
+                batch_loss = torch.tensor(0.0, device=self.device)
+
+                for gid, state, action in batch:
+                    gd = self.gset[gid]
+                    embed = self._encode(gd, state.to(self.device), "policy")
+                    state_embed = get_graph_embedding(embed)
+
+                    # 计算所有节点的 Q 值
+                    q_values = self.q_policy(state_embed, embed).squeeze(-1)  # [N]
+
+                    # 找合法动作（state == 0 的节点）
+                    valid_mask = (state == 0)
+                    if valid_mask.sum() == 0:
+                        continue
+
+                    # 交叉熵损失：让 expert_action 的 Q 值最高
+                    # 只在合法动作中计算 softmax
+                    valid_indices = valid_mask.nonzero(as_tuple=True)[0]
+                    valid_q = q_values[valid_indices]
+
+                    # expert_action 在 valid_indices 中的位置
+                    expert_pos = (valid_indices == action).nonzero(as_tuple=True)[0]
+                    if len(expert_pos) == 0:
+                        continue  # 专家动作不在合法范围内，跳过
+
+                    target = expert_pos[0]
+                    loss = nn.CrossEntropyLoss()(valid_q.unsqueeze(0), target.unsqueeze(0))
+                    batch_loss = batch_loss + loss
+
+                if batch_loss.requires_grad:
+                    avg_batch_loss = batch_loss / len(batch)
+                    bc_optimizer.zero_grad()
+                    avg_batch_loss.backward()
+                    torch.nn.utils.clip_grad_norm_(
+                        list(self.s2v_policy.parameters()) + list(self.q_policy.parameters()),
+                        10.0
+                    )
+                    bc_optimizer.step()
+                    total_loss += avg_batch_loss.item()
+                    n_batches += 1
+
+            avg_loss = total_loss / max(n_batches, 1)
+            epoch_losses.append(avg_loss)
+
+            if epoch % 10 == 0 or epoch == 1:
+                print(f"  【行为克隆 {epoch}/{n_epochs}】损失: {avg_loss:.6f}", flush=True)
+
+        # 同步到目标网络
+        self.s2v_target.load_state_dict(self.s2v_policy.state_dict())
+        self.q_target.load_state_dict(self.q_policy.state_dict())
+
+        # 更新 RL 优化器（用预训练后的参数）
+        self.optimizer = optim.Adam(
+            list(self.s2v_policy.parameters()) + list(self.q_policy.parameters()),
+            lr=self.optimizer.defaults.get("lr", 1e-3)
+        )
+
+        return epoch_losses
 
     # ─── Checkpoint ───
 

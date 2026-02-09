@@ -91,6 +91,33 @@ def train(args):
         device=device
     )
 
+    # ─── 阶段一：专家经验生成 + 行为克隆预训练 ───
+    if not args.resume and not args.skip_pretrain:
+        print("\n" + "─" * 56, flush=True)
+        print("【阶段一】专家经验生成 + 行为克隆预训练", flush=True)
+        print("─" * 56, flush=True)
+
+        print("\n  生成专家经验（启发式多种子运行）...", flush=True)
+        expert_data = agent.generate_expert_data(
+            instances, n_runs_per_instance=args.expert_runs
+        )
+
+        if expert_data:
+            print(f"\n  开始行为克隆预训练（{args.pretrain_epochs} 轮）...", flush=True)
+            bc_losses = agent.pretrain_from_expert(
+                expert_data, n_epochs=args.pretrain_epochs, lr=args.lr
+            )
+            print(f"  行为克隆完成，最终损失: {bc_losses[-1]:.6f}", flush=True)
+
+            # 保存预训练模型
+            pretrain_path = os.path.join(args.checkpoint_dir, "pretrained.pt")
+            agent.save_checkpoint(pretrain_path)
+            print(f"  预训练模型保存: {pretrain_path}", flush=True)
+
+        print("\n" + "─" * 56, flush=True)
+        print("【阶段二】RL 微调（在预训练基础上继续优化）", flush=True)
+        print("─" * 56, flush=True)
+
     start_epoch = 1
 
     if args.resume:
@@ -223,6 +250,10 @@ def main():
     parser.add_argument("--patience", type=int, default=50)
     parser.add_argument("--status", type=str, default=None)
     parser.add_argument("--eval", type=str, default=None)
+    # 预训练参数
+    parser.add_argument("--skip-pretrain", action="store_true", help="跳过行为克隆预训练")
+    parser.add_argument("--expert-runs", type=int, default=60, help="每算例启发式运行次数")
+    parser.add_argument("--pretrain-epochs", type=int, default=50, help="行为克隆训练轮数")
     args = parser.parse_args()
 
     if args.status:
