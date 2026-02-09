@@ -23,7 +23,8 @@ class IntegrationOptimizationModel:
         
         self.rl_optimizer = RLIntegrationOptimizer(self.instance_data, self.module2_output.copy())
         
-        self.results_path = r"C:\mountain_pv_optimization\data\results\module3"
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.results_path = os.path.join(project_root, "data", "results", "module3")
         os.makedirs(self.results_path, exist_ok=True)
 
     def load_instance(self) -> Dict:
@@ -121,8 +122,9 @@ class IntegrationOptimizationModel:
         return module3_output
 
 if __name__ == "__main__":
-    test_instance_path = r"C:\mountain_pv_optimization\data\processed\PV\public\easy\public_easy_r1.json"
-    test_module2_output_path = r"C:\mountain_pv_optimization\data\results\module2\M2-Output_r1.json"
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    test_instance_path = os.path.join(project_root, "data", "processed", "PV", "public", "easy", "public_easy_r1.json")
+    test_module2_output_path = os.path.join(project_root, "data", "results", "module2", "M2-Output_r1.json")
     if os.path.exists(test_instance_path) and os.path.exists(test_module2_output_path):
         model = IntegrationOptimizationModel(test_instance_path, test_module2_output_path)
         model.run()

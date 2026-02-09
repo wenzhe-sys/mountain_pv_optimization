@@ -20,7 +20,8 @@ class EquipmentCableModel:
         self.bap_solver = BranchAndPrice(self.instance_data, self.module1_output)
         
         # 步骤4：其他属性初始化
-        self.results_path = r"C:\mountain_pv_optimization\data\results\module2"
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.results_path = os.path.join(project_root, "data", "results", "module2")
         os.makedirs(self.results_path, exist_ok=True)
         self.grid_size = self.instance_data["terrain_data"]["grid_size"]
 
@@ -119,8 +120,9 @@ class EquipmentCableModel:
 # 测试代码（单独运行时执行）
 if __name__ == "__main__":
     # 示例：加载预处理后的算例和模块一输出
-    test_instance_path = r"C:\mountain_pv_optimization\data\processed\PV\public\easy\public_easy_r1.json"
-    test_module1_output_path = r"C:\mountain_pv_optimization\data\results\module1\M1-Output_r1.json"
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    test_instance_path = os.path.join(project_root, "data", "processed", "PV", "public", "easy", "public_easy_r1.json")
+    test_module1_output_path = os.path.join(project_root, "data", "results", "module1", "M1-Output_r1.json")
     
     if os.path.exists(test_instance_path) and os.path.exists(test_module1_output_path):
         model = EquipmentCableModel(test_instance_path, test_module1_output_path)

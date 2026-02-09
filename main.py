@@ -33,13 +33,14 @@ def main(instance_id: str = "r1"):
 
     # 步骤4：运行模块二（设备选型+电缆共沟）
     print("\n【步骤4/6】运行模块二：电气设备选型及电缆共沟...")
-    module1_output_path = os.path.join(r"C:\mountain_pv_optimization\data\results\module1", f"M1-Output_{instance_id}.json")
+    project_root = os.path.dirname(os.path.abspath(__file__))
+    module1_output_path = os.path.join(project_root, "data", "results", "module1", f"M1-Output_{instance_id}.json")
     model2 = EquipmentCableModel(processed_instance_path, module1_output_path)
     module2_output = model2.run()
 
     # 步骤5：运行模块三（集成优化）
     print("\n【步骤5/6】运行模块三：全生命周期集成优化...")
-    module2_output_path = os.path.join(r"C:\mountain_pv_optimization\data\results\module2", f"M2-Output_{instance_id}.json")
+    module2_output_path = os.path.join(project_root, "data", "results", "module2", f"M2-Output_{instance_id}.json")
     model3 = IntegrationOptimizationModel(processed_instance_path, module2_output_path)
     module3_output = model3.run()
 

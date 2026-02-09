@@ -7,10 +7,11 @@ import xlwt
 
 class PVDataPreprocessor:
     def __init__(self):
-        # 项目路径配置（符合算例存储规范）
-        self.raw_pv_path = r"C:\mountain_pv_optimization\data\raw\PV\real"
-        self.processed_pv_path = r"C:\mountain_pv_optimization\data\processed\PV\public\easy"
-        self.summary_path = r"C:\mountain_pv_optimization\data\raw\PV\real\summary.csv"
+        # 项目路径配置（跨平台，基于项目根目录自动推导）
+        self.project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.raw_pv_path = os.path.join(self.project_root, "data", "raw", "PV", "real")
+        self.processed_pv_path = os.path.join(self.project_root, "data", "processed", "PV", "public", "easy")
+        self.summary_path = os.path.join(self.project_root, "data", "raw", "PV", "real", "summary.csv")
         
         # 固定参数（严格遵循数据字典）
         self.common_params = {

@@ -191,7 +191,8 @@ from typing import Dict, List, Optional
 
 class InstanceLoader:
     def __init__(self):
-        self.base_path = r"C:\mountain_pv_optimization\data\processed"
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.base_path = os.path.join(project_root, "data", "processed")
 
     def load_instance(self, instance_id: str) -> Dict:
         """按算例ID加载标准化JSON算例"""

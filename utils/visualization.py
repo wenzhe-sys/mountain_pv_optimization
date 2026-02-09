@@ -5,10 +5,21 @@ from typing import Dict
 import os
 
 class ResultVisualizer:
-    def __init__(self, save_dir: str = r"C:\mountain_pv_optimization\data\results\visualization"):
+    def __init__(self, save_dir: str = None):
+        if save_dir is None:
+            project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            save_dir = os.path.join(project_root, "data", "results", "visualization")
         self.save_dir = save_dir
         os.makedirs(self.save_dir, exist_ok=True)
-        plt.rcParams["font.sans-serif"] = ["SimHei"]  # 支持中文
+        # 支持中文（跨平台：macOS用PingFang/Heiti，Windows用SimHei，Linux用WenQuanYi）
+        import platform
+        system = platform.system()
+        if system == "Darwin":
+            plt.rcParams["font.sans-serif"] = ["PingFang SC", "Heiti SC", "STHeiti", "Arial Unicode MS"]
+        elif system == "Linux":
+            plt.rcParams["font.sans-serif"] = ["WenQuanYi Micro Hei", "Noto Sans CJK SC", "SimHei"]
+        else:
+            plt.rcParams["font.sans-serif"] = ["SimHei"]
         plt.rcParams["axes.unicode_minus"] = False  # 解决负号显示问题
 
     def plot_partition(self, module1_output: Dict, instance_id: str):

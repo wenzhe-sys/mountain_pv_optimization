@@ -9,7 +9,8 @@ class CuttingPartitionModel:
         self.instance_path = instance_path
         self.instance_data = self.load_instance()
         self.benders_solver = BendersDecomposition(self.instance_data)
-        self.results_path = r"C:\mountain_pv_optimization\data\results\module1"
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.results_path = os.path.join(project_root, "data", "results", "module1")
         os.makedirs(self.results_path, exist_ok=True)
 
     def load_instance(self) -> Dict:

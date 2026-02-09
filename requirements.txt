@@ -1,10 +1,8 @@
-python==3.9.18
-gurobipy==10.0.3
-torch==2.0.1
-geopandas==0.14.1
 numpy==1.24.3
 pandas==2.0.2
+torch==2.0.1
 matplotlib==3.7.1
 plotly==5.15.0
-scikit-learn==1.3.0  # 用于模块二的K-means聚类
-gitpython==3.1.40    # 可选，辅助Git操作
+scikit-learn==1.3.0    # 用于模块二的K-means聚类
+xlwt==1.3.0            # 用于数据预处理生成Excel
+openpyxl==3.1.2        # 用于Excel读写
