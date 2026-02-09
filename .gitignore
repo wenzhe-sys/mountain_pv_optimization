@@ -35,6 +35,17 @@ data/raw/*.tif  # DEM地形原始文件（大文件）
 data/processed/*.npy.bak
 data/results/*.log
 
+# 训练产物（模型、日志、可视化等）
+outputs/
+checkpoints/
+data/models/*.pt
+data/models/*.pth
+*.pt
+*.pth
+
+# pytest 缓存
+.pytest_cache/
+
 # 其他
 .DS_Store
 *.pth.bak

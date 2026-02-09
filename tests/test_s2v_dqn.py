@@ -129,7 +129,14 @@ class TestReplayBuffer(unittest.TestCase):
     def test_push_and_sample(self):
         buf = ReplayBuffer(capacity=100)
         for i in range(50):
-            buf.push(torch.randn(5, 3), i, 1.0, torch.randn(5, 3), False, torch.ones(5, dtype=torch.bool))
+            # 新 Transition 格式：node_feat, adjacency, context, action_mask,
+            #                     action, reward, next_node_feat, next_context, next_action_mask, done
+            buf.push(
+                torch.randn(5, 5), torch.eye(5), torch.randn(4), torch.ones(5, dtype=torch.bool),
+                i % 5, 1.0,
+                torch.randn(5, 5), torch.randn(4), torch.ones(5, dtype=torch.bool),
+                False
+            )
         self.assertEqual(len(buf), 50)
         samples = buf.sample(10)
         self.assertEqual(len(samples), 10)

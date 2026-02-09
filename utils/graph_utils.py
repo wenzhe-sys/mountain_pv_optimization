@@ -13,9 +13,8 @@
 """
 
 import networkx as nx
-import numpy as np
 from typing import List, Dict, Set, Tuple, Optional
-from collections import deque
+from collections import deque, defaultdict
 
 
 def build_adjacency_graph(pva_list: List[Dict], grid_size: float = 10.0) -> nx.Graph:
@@ -59,7 +58,6 @@ def build_adjacency_graph(pva_list: List[Dict], grid_size: float = 10.0) -> nx.G
     # 策略：找每个面板在行方向和列方向上最近的邻居
 
     # 按行分组
-    from collections import defaultdict
     row_groups = defaultdict(list)  # row -> [(col, panel_id), ...]
     col_groups = defaultdict(list)  # col -> [(row, panel_id), ...]
 

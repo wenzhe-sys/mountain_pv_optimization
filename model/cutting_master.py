@@ -67,8 +67,10 @@ class CuttingMasterProblem:
 
         # 验证切割规格合法性
         for t_l in self.t_l_options:
-            assert t_l % 2.0 == 0, f"切割规格 {t_l} 不是 2.0 的整数倍（错误码 E102）"
-            assert 0 < t_l <= D, f"切割规格 {t_l} 超出面板长度 {D}m"
+            if t_l % 2.0 != 0:
+                raise ValueError(f"切割规格 {t_l} 不是 2.0 的整数倍（错误码 E102）")
+            if not (0 < t_l <= D):
+                raise ValueError(f"切割规格 {t_l} 超出合法范围 (0, {D}]m")
 
     def solve(self, demand: Dict[float, int],
               max_materials: int = None,

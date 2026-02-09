@@ -240,7 +240,7 @@ def main():
     parser.add_argument("--epsilon-decay", type=int, default=5000, help="ε衰减步数")
     parser.add_argument("--device", type=str, default=None, help="计算设备 (cpu/cuda/mps)")
     parser.add_argument("--resume", type=str, default=None, help="从 checkpoint 恢复训练")
-    parser.add_argument("--checkpoint-dir", type=str, default="checkpoints", help="存档目录")
+    parser.add_argument("--checkpoint-dir", type=str, default="outputs/checkpoints", help="存档目录")
     parser.add_argument("--save-every", type=int, default=50, help="存档间隔（轮次）")
     parser.add_argument("--log-every", type=int, default=10, help="日志打印间隔")
     parser.add_argument("--patience", type=int, default=30, help="早停耐心值")

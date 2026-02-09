@@ -8,7 +8,7 @@ class ResultVisualizer:
     def __init__(self, save_dir: str = None):
         if save_dir is None:
             project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            save_dir = os.path.join(project_root, "data", "results", "visualization")
+            save_dir = os.path.join(project_root, "outputs", "visualizations")
         self.save_dir = save_dir
         os.makedirs(self.save_dir, exist_ok=True)
         # 支持中文（跨平台：macOS用PingFang/Heiti，Windows用SimHei，Linux用WenQuanYi）

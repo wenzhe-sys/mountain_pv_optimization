@@ -45,7 +45,7 @@ class TestCuttingMasterProblem(unittest.TestCase):
 
     def test_spec_validation(self):
         """验证切割规格合法性（必须是 2.0 的整数倍）"""
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             CuttingMasterProblem(D=12.0, t_l_options=[3.0, 5.0])
 
     def test_material_length_constraint(self):

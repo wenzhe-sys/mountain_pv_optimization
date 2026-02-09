@@ -47,9 +47,12 @@ from utils.graph_utils import (
 
 logger = logging.getLogger(__name__)
 
-# 经验元组
+# 经验元组（包含完整的图结构信息，确保回放时不混用其他 transition 的数据）
 Transition = namedtuple("Transition",
-                         ["state", "action", "reward", "next_state", "done", "mask"])
+                         ["node_feat", "adjacency", "context", "action_mask",
+                          "action", "reward",
+                          "next_node_feat", "next_context", "next_action_mask",
+                          "done"])
 
 
 class ReplayBuffer:
@@ -332,16 +335,21 @@ class DQNPartitionAgent:
             return q_values.argmax().item()
 
     def store_transition(self, state, action, reward, next_state, done):
-        """存储经验。"""
+        """存储完整的经验（包含图结构，避免回放时数据错配）。"""
         self.replay_buffer.push(
-            state["node_features"], action, reward,
-            next_state["node_features"], done,
-            state["action_mask"]
+            state["node_features"], state["adjacency"], state["context"],
+            state["action_mask"],
+            action, reward,
+            next_state["node_features"], next_state["context"],
+            next_state["action_mask"],
+            done
         )
 
-    def learn(self, state: Dict) -> Optional[float]:
+    def learn(self) -> Optional[float]:
         """
         从经验回放中学习。
+
+        每个 transition 使用自己存储的邻接矩阵和上下文（修复数据错配问题）。
 
         Returns:
             损失值（如果执行了学习）或 None
@@ -351,17 +359,17 @@ class DQNPartitionAgent:
 
         transitions = self.replay_buffer.sample(self.batch_size)
 
-        # 逐样本计算损失（因为图结构不同，无法 batch）
+        # 逐样本计算损失（因为不同 transition 的图结构可能不同，无法 batch）
         total_loss = 0.0
         for trans in transitions:
-            node_feat = trans.state.to(self.device)
-            adjacency = state["adjacency"].to(self.device)
-            context = state["context"].to(self.device)
+            node_feat = trans.node_feat.to(self.device)
+            adjacency = trans.adjacency.to(self.device)
+            context = trans.context.to(self.device)
             action = trans.action
             reward = trans.reward
             done = trans.done
 
-            # Q(s, a)
+            # Q(s, a) -- 用该 transition 自己的图结构
             q_values = self.policy_net(node_feat, adjacency, context)
             q_value = q_values[action]
 
@@ -369,13 +377,18 @@ class DQNPartitionAgent:
             if done:
                 target = torch.tensor(reward, device=self.device, dtype=torch.float32)
             else:
-                next_feat = trans.next_state.to(self.device)
+                next_feat = trans.next_node_feat.to(self.device)
+                next_context = trans.next_context.to(self.device)
+                next_mask = trans.next_action_mask.to(self.device)
                 with torch.no_grad():
-                    next_q = self.target_net(next_feat, adjacency, context)
-                    next_mask = trans.mask.to(self.device) if trans.mask is not None else None
-                    if next_mask is not None:
-                        next_q = next_q.masked_fill(~next_mask, float("-inf"))
-                    target = reward + self.gamma * next_q.max()
+                    # 用同一图的邻接矩阵（同一 episode 内图结构不变）
+                    next_q = self.target_net(next_feat, adjacency, next_context, next_mask)
+                    # 只取合法动作中的最大值
+                    valid_q = next_q[next_mask]
+                    if len(valid_q) > 0:
+                        target = reward + self.gamma * valid_q.max()
+                    else:
+                        target = torch.tensor(reward, device=self.device, dtype=torch.float32)
 
             loss = nn.functional.smooth_l1_loss(q_value, target)
             total_loss += loss
@@ -407,7 +420,7 @@ class DQNPartitionAgent:
         """
         epoch_rewards = []
         epoch_losses = []
-        epoch_constraints = {"capacity": 0, "connected": 0, "perimeter": 0, "total": 0}
+        epoch_constraints = {"capacity": 0, "connected": 0, "perimeter": 0, "total_zones": 0}
 
         for inst in instances:
             # 构建图和环境
@@ -432,7 +445,7 @@ class DQNPartitionAgent:
                 next_state, reward, done = env.step(action)
                 self.store_transition(state, action, reward, next_state, done)
 
-                loss = self.learn(state)
+                loss = self.learn()
                 if loss is not None:
                     episode_losses.append(loss)
 
@@ -449,7 +462,7 @@ class DQNPartitionAgent:
                 perimeter_lb=pva_params["LB"], perimeter_ub=pva_params["UB"]
             )
             result = validator.validate(env.zones)
-            epoch_constraints["total"] += 1
+            epoch_constraints["total_zones"] += len(result.zone_details)
             for detail in result.zone_details:
                 if detail["capacity_ok"]:
                     epoch_constraints["capacity"] += 1
@@ -461,7 +474,7 @@ class DQNPartitionAgent:
         # 汇总统计
         avg_reward = np.mean(epoch_rewards) if epoch_rewards else 0.0
         avg_loss = np.mean(epoch_losses) if epoch_losses else 0.0
-        n_total_zones = epoch_constraints["total"] * n_zones if epoch_constraints["total"] > 0 else 1
+        n_total_zones = max(epoch_constraints["total_zones"], 1)
 
         stats = {
             "epoch": epoch,
