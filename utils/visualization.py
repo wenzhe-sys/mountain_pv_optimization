@@ -118,5 +118,151 @@ class ResultVisualizer:
         plt.close()
         print(f"损耗趋势图保存至：{save_path}")
 
+    # ─── 模块一新增可视化 ───
+
+    def plot_partition_detailed(self, module1_output: Dict, instance_id: str):
+        """
+        可视化模块一分区结果（增强版）。
+
+        每个分区用不同颜色着色，标注面板数、逆变器 ID 和周长。
+        """
+        fig, ax = plt.subplots(figsize=(12, 10))
+        zones = module1_output["zone_summary"]
+        n_zones = len(zones)
+        colors = plt.cm.Set3(np.linspace(0, 1, max(n_zones, 1)))
+
+        for idx, zone in enumerate(zones):
+            zone_pva = [p for p in module1_output["partition_result"]
+                        if p["zone_id"] == zone["zone_id"]]
+            x = [p["grid_coord"][1] for p in zone_pva]
+            y = [p["grid_coord"][0] for p in zone_pva]
+
+            label = (f"{zone['zone_id']} ({zone['pva_count']}块, "
+                     f"周长{zone['perimeter']:.0f}m)")
+            ax.scatter(x, y, c=[colors[idx]], label=label,
+                       s=80, edgecolors="black", linewidths=0.5, zorder=2)
+
+            # 在分区重心处标注逆变器 ID
+            if x and y:
+                cx, cy = np.mean(x), np.mean(y)
+                ax.annotate(zone["inverter_id"], (cx, cy),
+                           fontsize=7, ha="center", va="center",
+                           fontweight="bold", color="darkred", zorder=3)
+
+        ax.set_xlabel("网格列坐标")
+        ax.set_ylabel("网格行坐标")
+        ax.set_title(f"光伏面板分区规划结果（算例: {instance_id}, "
+                     f"{n_zones}个分区）")
+        ax.legend(loc="upper right", fontsize=8)
+        ax.grid(True, alpha=0.2)
+        ax.set_aspect("equal")
+
+        save_path = os.path.join(self.save_dir, f"partition_detail_{instance_id}.png")
+        plt.savefig(save_path, dpi=300, bbox_inches="tight")
+        plt.close()
+        print(f"  分区详情图保存至: {save_path}")
+
+    def plot_cutting_utilization(self, module1_output: Dict, instance_id: str):
+        """
+        可视化切割方案：每种原材料的利用率柱状图。
+        """
+        cut_result = module1_output.get("cut_result", [])
+        used_materials = [m for m in cut_result if m.get("is_used")]
+
+        if not used_materials:
+            return
+
+        fig, ax = plt.subplots(figsize=(10, 5))
+        names = [m["material_id"] for m in used_materials]
+        utils = [m.get("utilization", 0) * 100 for m in used_materials]
+
+        bars = ax.bar(range(len(names)), utils, color="#4ECDC4", edgecolor="black", linewidth=0.5)
+        ax.set_xticks(range(len(names)))
+        ax.set_xticklabels(names, rotation=45, fontsize=8)
+        ax.set_ylabel("利用率 (%)")
+        ax.set_title(f"原材料切割利用率（算例: {instance_id}）")
+        ax.set_ylim(0, 110)
+        ax.axhline(y=100, color="red", linestyle="--", alpha=0.5, label="理论上限")
+        ax.legend()
+        ax.grid(axis="y", alpha=0.3)
+
+        save_path = os.path.join(self.save_dir, f"cutting_util_{instance_id}.png")
+        plt.savefig(save_path, dpi=300, bbox_inches="tight")
+        plt.close()
+        print(f"  切割利用率图保存至: {save_path}")
+
+    def plot_benders_convergence(self, history: list, instance_id: str):
+        """
+        可视化 Benders 分解收敛过程：UB/LB 随迭代变化。
+        """
+        if not history:
+            return
+
+        iters = [h["iteration"] for h in history]
+        lbs = [h["lb"] for h in history]
+        ubs = [h.get("ub") for h in history]
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.plot(iters, lbs, "b-o", label="下界 (LB)", markersize=6)
+
+        ub_iters = [i for i, u in zip(iters, ubs) if u is not None]
+        ub_vals = [u for u in ubs if u is not None]
+        if ub_vals:
+            ax.plot(ub_iters, ub_vals, "r-s", label="上界 (UB)", markersize=6)
+
+        ax.set_xlabel("迭代次数")
+        ax.set_ylabel("目标值")
+        ax.set_title(f"Benders 分解收敛过程（算例: {instance_id}）")
+        ax.legend()
+        ax.grid(True, alpha=0.3)
+
+        save_path = os.path.join(self.save_dir, f"benders_convergence_{instance_id}.png")
+        plt.savefig(save_path, dpi=300, bbox_inches="tight")
+        plt.close()
+        print(f"  Benders 收敛曲线保存至: {save_path}")
+
+    def plot_dqn_training_curves(self, training_history: list):
+        """
+        可视化 DQN 训练曲线：奖励、损失、epsilon 三幅子图。
+        """
+        if not training_history:
+            return
+
+        epochs = [h["epoch"] for h in training_history]
+        rewards = [h["avg_reward"] for h in training_history]
+        losses = [h["avg_loss"] for h in training_history]
+        epsilons = [h["epsilon"] for h in training_history]
+
+        fig, axes = plt.subplots(3, 1, figsize=(12, 10), sharex=True)
+
+        # 奖励曲线
+        axes[0].plot(epochs, rewards, color="#2E86AB", linewidth=1.5)
+        axes[0].set_ylabel("平均奖励")
+        axes[0].set_title("S2V-DQN 训练曲线")
+        axes[0].grid(True, alpha=0.3)
+
+        # 标注最优点
+        best_idx = np.argmax(rewards)
+        axes[0].annotate(f"最优: {rewards[best_idx]:.2f}",
+                         xy=(epochs[best_idx], rewards[best_idx]),
+                         fontsize=9, color="red", fontweight="bold")
+
+        # 损失曲线
+        axes[1].plot(epochs, losses, color="#FF6B6B", linewidth=1.5)
+        axes[1].set_ylabel("平均损失")
+        axes[1].grid(True, alpha=0.3)
+
+        # Epsilon 曲线
+        axes[2].plot(epochs, epsilons, color="#4ECDC4", linewidth=1.5)
+        axes[2].set_ylabel("探索率 (ε)")
+        axes[2].set_xlabel("训练轮次")
+        axes[2].grid(True, alpha=0.3)
+
+        plt.tight_layout()
+        save_path = os.path.join(self.save_dir, "dqn_training_curves.png")
+        plt.savefig(save_path, dpi=300, bbox_inches="tight")
+        plt.close()
+        print(f"  DQN 训练曲线保存至: {save_path}")
+
 # 单例调用
 result_visualizer = ResultVisualizer()

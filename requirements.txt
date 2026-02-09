@@ -6,3 +6,5 @@ plotly==5.15.0
 scikit-learn==1.3.0    # 用于模块二的K-means聚类
 xlwt==1.3.0            # 用于数据预处理生成Excel
 openpyxl==3.1.2        # 用于Excel读写
+pulp==3.3.0            # 用于模块一切割主问题MIP求解
+networkx==3.2.1        # 用于模块一分区连通性检查与图算法
