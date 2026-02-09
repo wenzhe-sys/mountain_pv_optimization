@@ -1,4 +1,4 @@
-"""S2V-DQN 网络和智能体单元测试"""
+"""S2V-DQN 网络和智能体单元测试（对齐论文重写后）"""
 
 import unittest
 import sys
@@ -8,16 +8,15 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import torch
 import numpy as np
 
-from algorithm.s2v_network import (
-    Structure2Vec, QNetwork, S2VDQNModel,
-    build_node_features, build_adjacency_matrix, build_context_features
+from algorithm.s2v_network import Structure2Vec, QFunction, encode_graph, get_graph_embedding
+from algorithm.dqn_agent import (
+    DQNPartitionAgent, ReplayBuffer, PartitionEnv, GraphData, GSet
 )
-from algorithm.dqn_agent import DQNPartitionAgent, ReplayBuffer, PartitionEnv
 from utils.graph_utils import build_adjacency_graph
 
 
 def make_simple_graph():
-    """构造简单的 10 节点测试图"""
+    """构造 2x5 = 10 节点测试图"""
     pva_list = [
         {"panel_id": f"pva_{i}", "x": c * 10.0, "y": r * 10.0,
          "grid_coord": [r, c], "cut_spec": [6.0, 3.0]}
@@ -30,98 +29,77 @@ def make_simple_graph():
 
 
 class TestStructure2Vec(unittest.TestCase):
-    """测试 S2V 图嵌入网络"""
 
     def test_forward_shape(self):
-        """前向传播输出形状正确"""
-        s2v = Structure2Vec(node_feature_dim=5, hidden_dim=64, n_iterations=4)
-        node_features = torch.randn(10, 5)
-        adj = torch.eye(10)
+        s2v = Structure2Vec(dim_in=1, dim_embed=64)
+        N = 10
+        feat = torch.zeros(N, 1)
+        adj = torch.eye(N)
         adj[0, 1] = adj[1, 0] = 1.0
-        adj[1, 2] = adj[2, 1] = 1.0
+        ew = adj.clone()
+        embed = torch.zeros(N, 64)
 
-        output = s2v(node_features, adj)
-        self.assertEqual(output.shape, (10, 64))
+        out = s2v(feat, adj, ew, embed)
+        self.assertEqual(out.shape, (N, 64))
 
-    def test_different_iterations(self):
-        """不同迭代轮数应产生不同结果"""
-        node_features = torch.randn(5, 5)
-        adj = torch.ones(5, 5) - torch.eye(5)
+    def test_multi_round_encoding(self):
+        s2v = Structure2Vec(dim_in=1, dim_embed=32)
+        N = 5
+        feat = torch.ones(N, 1)
+        adj = torch.ones(N, N) - torch.eye(N)
+        ew = adj.clone()
 
-        s2v_2 = Structure2Vec(5, 32, n_iterations=2)
-        s2v_4 = Structure2Vec(5, 32, n_iterations=4)
-
-        # 使用相同权重初始化
-        s2v_4.load_state_dict(s2v_2.state_dict(), strict=False)
-
-        out_2 = s2v_2(node_features, adj)
-        out_4 = s2v_4(node_features, adj)
-
-        # 不同轮数应产生不同嵌入
-        self.assertFalse(torch.allclose(out_2, out_4))
+        embed = encode_graph(s2v, feat, adj, ew, T=4)
+        self.assertEqual(embed.shape, (N, 32))
+        # 嵌入不应全为零
+        self.assertGreater(embed.abs().sum().item(), 0)
 
 
-class TestQNetwork(unittest.TestCase):
-    """测试 Q 值网络"""
+class TestQFunction(unittest.TestCase):
 
-    def test_forward_shape(self):
-        q_net = QNetwork(hidden_dim=64, context_dim=4)
-        node_emb = torch.randn(10, 64)
-        global_emb = torch.randn(64)
-        context = torch.randn(4)
+    def test_forward_single(self):
+        q = QFunction(dim_embed=64)
+        state_embed = torch.randn(1, 64)
+        node_embed = torch.randn(10, 64)
+        out = q(state_embed, node_embed)
+        self.assertEqual(out.shape, (10, 1))
 
-        q_values = q_net(node_emb, global_emb, context)
-        self.assertEqual(q_values.shape, (10, 1))
-
-
-class TestS2VDQNModel(unittest.TestCase):
-    """测试完整的 S2V-DQN 模型"""
-
-    def test_forward_with_mask(self):
-        """带掩码的前向传播"""
-        model = S2VDQNModel(5, 64, 4, 4)
-        node_features = torch.randn(10, 5)
-        adj = torch.eye(10)
-        context = torch.randn(4)
-        mask = torch.ones(10, dtype=torch.bool)
-        mask[5:] = False  # 后5个节点被掩码
-
-        q_values = model(node_features, adj, context, mask)
-        self.assertEqual(q_values.shape, (10,))
-        # 被掩码的位置应为 -inf
-        self.assertTrue(all(q_values[5:] == float("-inf")))
-
-    def test_get_embeddings(self):
-        model = S2VDQNModel(5, 64, 4, 4)
-        node_features = torch.randn(10, 5)
-        adj = torch.eye(10)
-
-        node_emb, global_emb = model.get_embeddings(node_features, adj)
-        self.assertEqual(node_emb.shape, (10, 64))
-        self.assertEqual(global_emb.shape, (64,))
+    def test_forward_batch(self):
+        q = QFunction(dim_embed=64)
+        state_embed = torch.randn(8, 64)
+        node_embed = torch.randn(8, 64)
+        out = q(state_embed, node_embed)
+        self.assertEqual(out.shape, (8, 1))
 
 
-class TestBuildFeatures(unittest.TestCase):
-    """测试特征构建函数"""
+class TestGraphEmbedding(unittest.TestCase):
 
-    def test_node_features_shape(self):
+    def test_global_embedding(self):
+        embed = torch.randn(10, 64)
+        global_embed = get_graph_embedding(embed)
+        self.assertEqual(global_embed.shape, (1, 64))
+
+
+class TestGraphData(unittest.TestCase):
+
+    def test_creation(self):
         graph, _ = make_simple_graph()
-        zones = [{"pva_0", "pva_1"}]
-        features = build_node_features(graph, zones, 0)
-        self.assertEqual(features.shape, (10, 5))
+        gd = GraphData(graph)
+        self.assertEqual(gd.n_nodes, 10)
+        self.assertEqual(gd.adj.shape, (10, 10))
+        # 邻接矩阵应对称
+        self.assertTrue(torch.allclose(gd.adj, gd.adj.T))
 
-    def test_adjacency_matrix(self):
+
+class TestGSet(unittest.TestCase):
+
+    def test_push_and_get(self):
         graph, _ = make_simple_graph()
-        adj = build_adjacency_matrix(graph)
-        self.assertEqual(adj.shape, (10, 10))
-        # 对称
-        self.assertTrue(torch.allclose(adj, adj.T))
-
-    def test_context_features(self):
-        context = build_context_features(
-            [{"a", "b"}], {"c"}, n_total=10, max_panels=26, n_zones_target=5
-        )
-        self.assertEqual(context.shape, (4,))
+        gset = GSet()
+        gd = GraphData(graph)
+        gid = gset.push(gd)
+        self.assertEqual(gid, 0)
+        self.assertEqual(gset[0].n_nodes, 10)
 
 
 class TestReplayBuffer(unittest.TestCase):
@@ -129,65 +107,86 @@ class TestReplayBuffer(unittest.TestCase):
     def test_push_and_sample(self):
         buf = ReplayBuffer(capacity=100)
         for i in range(50):
-            # 新 Transition 格式：node_feat, adjacency, context, action_mask,
-            #                     action, reward, next_node_feat, next_context, next_action_mask, done
-            buf.push(
-                torch.randn(5, 5), torch.eye(5), torch.randn(4), torch.ones(5, dtype=torch.bool),
-                i % 5, 1.0,
-                torch.randn(5, 5), torch.randn(4), torch.ones(5, dtype=torch.bool),
-                False
-            )
+            state = torch.zeros(10, dtype=torch.long)
+            buf.push(0, state, i % 10, 1.0, state, False)
         self.assertEqual(len(buf), 50)
-        samples = buf.sample(10)
-        self.assertEqual(len(samples), 10)
+        gid, states, actions, rewards, next_states, dones = buf.sample(8)
+        self.assertEqual(len(states), 8)
+        self.assertEqual(actions.shape, (8, 1))
 
 
 class TestPartitionEnv(unittest.TestCase):
-    """测试分区环境"""
 
     def test_reset(self):
         graph, _ = make_simple_graph()
-        env = PartitionEnv(graph, n_zones=1, min_panels=5, max_panels=10,
-                            perimeter_lb=5.0, perimeter_ub=200.0)
+        gd = GraphData(graph)
+        env = PartitionEnv(gd, target_size=5, min_size=3, max_size=8)
         state = env.reset()
-        self.assertIn("node_features", state)
-        self.assertIn("adjacency", state)
-        self.assertIn("action_mask", state)
+        self.assertEqual(state.shape, (10,))
         self.assertFalse(env.done)
 
-    def test_step_valid(self):
+    def test_valid_actions_empty_zone(self):
         graph, _ = make_simple_graph()
-        env = PartitionEnv(graph, n_zones=1, min_panels=5, max_panels=10,
-                            perimeter_lb=5.0, perimeter_ub=200.0)
+        gd = GraphData(graph)
+        env = PartitionEnv(gd, target_size=5, min_size=3, max_size=8)
         env.reset()
-        # 选择第一个可用动作
-        mask = env._get_action_mask()
-        valid = torch.where(mask)[0]
-        if len(valid) > 0:
-            state, reward, done = env.step(valid[0].item())
-            self.assertIsInstance(reward, float)
+        valid = env.get_valid_actions()
+        self.assertEqual(len(valid), 10)  # 所有节点都可选
+
+    def test_step_and_reward(self):
+        graph, _ = make_simple_graph()
+        gd = GraphData(graph)
+        env = PartitionEnv(gd, target_size=5, min_size=3, max_size=8)
+        env.reset()
+        # 选第一个节点
+        state, reward, done = env.step(0)
+        self.assertEqual(state[0].item(), 1)
+        self.assertFalse(done)
+        # 第一步奖励为 0
+        self.assertEqual(reward, 0.0)
+        # 选第二个相邻节点
+        state, reward, done = env.step(1)
+        self.assertEqual(state[1].item(), 1)
+        # 第二步应有非零奖励（周长变化）
+        self.assertIsInstance(reward, float)
+
+    def test_excluded_nodes(self):
+        graph, _ = make_simple_graph()
+        gd = GraphData(graph)
+        env = PartitionEnv(gd, target_size=3, min_size=2, max_size=5,
+                            excluded={0, 1, 2})
+        state = env.reset()
+        self.assertEqual(state[0].item(), -1)
+        self.assertEqual(state[1].item(), -1)
+        valid = env.get_valid_actions()
+        self.assertNotIn(0, valid)
+        self.assertNotIn(1, valid)
+        self.assertNotIn(2, valid)
 
 
-class TestDQNCheckpoint(unittest.TestCase):
-    """测试 checkpoint 保存和加载"""
+class TestDQNAgent(unittest.TestCase):
 
-    def test_save_and_load(self):
+    def test_select_action(self):
+        graph, _ = make_simple_graph()
+        gd = GraphData(graph)
         agent = DQNPartitionAgent(device="cpu")
-        agent.steps_done = 100
-        agent.best_reward = -5.0
-        agent.current_epoch = 10
+        state = torch.zeros(10, dtype=torch.long)
+        valid = list(range(10))
+        action = agent.select_action(gd, state, epsilon=1.0, valid_actions=valid)
+        self.assertIn(action, valid)
 
-        path = "/tmp/test_ckpt.pt"
+    def test_checkpoint(self):
+        agent = DQNPartitionAgent(device="cpu")
+        agent.current_epoch = 10
+        agent.best_reward = 5.0
+        path = "/tmp/test_s2v_ckpt.pt"
         agent.save_checkpoint(path)
 
         agent2 = DQNPartitionAgent(device="cpu")
         meta = agent2.load_checkpoint(path)
-
         self.assertEqual(meta["epoch"], 10)
-        self.assertAlmostEqual(meta["best_reward"], -5.0)
-        self.assertEqual(agent2.steps_done, 100)
+        self.assertAlmostEqual(meta["best_reward"], 5.0)
 
-        # 清理
         if os.path.exists(path):
             os.remove(path)
 
