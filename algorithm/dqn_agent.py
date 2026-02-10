@@ -436,15 +436,7 @@ class DQNPartitionAgent:
                              min_panels: int = 18, max_panels: int = 26) -> List[Set[str]]:
         """
         后处理：分配遗漏节点 + 连通性修复 + 轻量级重平衡。
-
-        Args:
-            zones: DQN 构建的 K 个分区（panel_id 集合列表）
-            graph: 完整邻接图
-            min_panels: 分区最小面板数
-            max_panels: 分区最大面板数
-
-        Returns:
-            修复后的分区列表
+        设计为 O(N × K × avg_degree)，避免昂贵的全图 BFS。
         """
         all_nodes = set(graph.nodes())
         assigned = set()
@@ -452,38 +444,49 @@ class DQNPartitionAgent:
             assigned |= z
         unassigned = all_nodes - assigned
 
-        # 阶段 1：将未分配节点就近分配到相邻分区
+        # 阶段 1：将未分配节点分配到相邻分区（邻接优先，次选最小分区）
+        # 多轮迭代，直到无法再分配
+        for _ in range(10):
+            if not unassigned:
+                break
+            placed_any = False
+            for node in list(unassigned):
+                # 找所有与该节点相邻的分区
+                adjacent_zones = []
+                for nb in graph.neighbors(node):
+                    for zi, z in enumerate(zones):
+                        if nb in z and len(z) < max_panels:
+                            adjacent_zones.append(zi)
+                if adjacent_zones:
+                    # 选最小的分区（帮助平衡）
+                    best_zi = min(adjacent_zones, key=lambda zi: len(zones[zi]))
+                    zones[best_zi].add(node)
+                    unassigned.discard(node)
+                    placed_any = True
+            if not placed_any:
+                break
+
+        # 无法通过邻接分配的节点，放入最近的最小分区
         for node in list(unassigned):
-            best_zone = -1
-            best_dist = float("inf")
             node_data = graph.nodes[node]
             nr, nc = node_data["row"], node_data["col"]
-
+            best_zi, best_dist = -1, float("inf")
             for zi, z in enumerate(zones):
-                if len(z) >= max_panels:
+                if len(z) >= max_panels or not z:
                     continue
-                # 优先选有邻接关系的分区
-                for nb in graph.neighbors(node):
-                    if nb in z:
-                        best_zone = zi
-                        best_dist = -1  # 邻接优先
-                        break
-                if best_dist == -1:
-                    break
-                # 否则选质心最近的
-                if z:
-                    rows = [graph.nodes[n]["row"] for n in z]
-                    cols = [graph.nodes[n]["col"] for n in z]
-                    dist = abs(nr - np.mean(rows)) + abs(nc - np.mean(cols))
+                for zn in z:
+                    zd = graph.nodes[zn]
+                    dist = abs(nr - zd["row"]) + abs(nc - zd["col"])
                     if dist < best_dist:
                         best_dist = dist
-                        best_zone = zi
+                        best_zi = zi
+                    break  # 只检查第一个节点作为代理，够快
+            if best_zi >= 0:
+                zones[best_zi].add(node)
+                unassigned.discard(node)
 
-            if best_zone >= 0:
-                zones[best_zone].add(node)
-
-        # 阶段 2：连通性修复 — 将不连通碎片迁移到相邻分区
-        for _round in range(5):
+        # 阶段 2：连通性修复 — 碎片迁移到相邻分区
+        for _round in range(3):
             repaired = False
             for zi in range(len(zones)):
                 components = get_connected_components(graph, zones[zi])
@@ -496,55 +499,63 @@ class DQNPartitionAgent:
                 repaired = True
 
                 for fragment in components[1:]:
+                    # 尝试整块迁移到相邻分区
+                    frag_neighbors = {}  # zj -> count of adjacent edges
                     for node in fragment:
-                        placed = False
-                        for zj in range(len(zones)):
-                            if zj == zi:
-                                continue
-                            if len(zones[zj]) >= max_panels:
-                                continue
-                            for nb in graph.neighbors(node):
-                                if nb in zones[zj]:
-                                    zones[zj].add(node)
-                                    placed = True
+                        for nb in graph.neighbors(node):
+                            for zj in range(len(zones)):
+                                if zj != zi and nb in zones[zj]:
+                                    frag_neighbors[zj] = frag_neighbors.get(zj, 0) + 1
+                    # 选邻接最多且不超载的分区
+                    best_zj = -1
+                    best_score = -1
+                    for zj, score in frag_neighbors.items():
+                        if len(zones[zj]) + len(fragment) <= max_panels and score > best_score:
+                            best_score = score
+                            best_zj = zj
+                    if best_zj >= 0:
+                        zones[best_zj] |= fragment
+                    else:
+                        # 逐节点分配
+                        for node in fragment:
+                            placed = False
+                            for zj in range(len(zones)):
+                                if zj == zi or len(zones[zj]) >= max_panels:
+                                    continue
+                                for nb in graph.neighbors(node):
+                                    if nb in zones[zj]:
+                                        zones[zj].add(node)
+                                        placed = True
+                                        break
+                                if placed:
                                     break
-                            if placed:
-                                break
-                        if not placed:
-                            # 放回原分区（最大分量）
-                            zones[zi].add(node)
+                            if not placed:
+                                zones[zi].add(node)
 
             if not repaired:
                 break
 
-        # 阶段 3：轻量级重平衡 — 将超载分区的边界节点移给欠载邻居
-        for _round in range(3):
+        # 阶段 3：快速重平衡（无连通性检查，只移边界节点）
+        for _round in range(10):
             moved = False
             for zi in range(len(zones)):
                 if len(zones[zi]) <= max_panels:
                     continue
-                # 找边界节点（有邻居在其他分区的节点）
-                boundary = []
-                for node in zones[zi]:
-                    for nb in graph.neighbors(node):
-                        for zj in range(len(zones)):
-                            if zj != zi and nb in zones[zj] and len(zones[zj]) < max_panels:
-                                boundary.append((node, zj))
-                                break
-                        else:
-                            continue
-                        break
-
-                for node, target_zi in boundary:
+                for node in list(zones[zi]):
                     if len(zones[zi]) <= max_panels:
                         break
-                    # 移动前检查不会破坏源分区连通性
-                    test_zone = zones[zi] - {node}
-                    if test_zone and check_connectivity(graph, test_zone):
-                        zones[zi].remove(node)
-                        zones[target_zi].add(node)
-                        moved = True
-
+                    # 只移有邻居在其他欠载分区的边界节点
+                    for nb in graph.neighbors(node):
+                        target_zi = None
+                        for zj in range(len(zones)):
+                            if zj != zi and nb in zones[zj] and len(zones[zj]) < max_panels:
+                                target_zi = zj
+                                break
+                        if target_zi is not None:
+                            zones[zi].remove(node)
+                            zones[target_zi].add(node)
+                            moved = True
+                            break
             if not moved:
                 break
 
