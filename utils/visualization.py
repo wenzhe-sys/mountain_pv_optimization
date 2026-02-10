@@ -7,6 +7,14 @@ import os
 class ResultVisualizer:
     def __init__(self, save_dir: str = None):
         if save_dir is None:
+            # 使用相对路径构建保存目录
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            project_root = os.path.dirname(current_dir)  # 上两级目录（utils目录的父目录）
+            self.save_dir = os.path.join(project_root, "data", "results", "visualization")
+        else:
+            self.save_dir = save_dir
+    def __init__(self, save_dir: str = None):
+        if save_dir is None:
             project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             save_dir = os.path.join(project_root, "outputs", "visualizations")
         self.save_dir = save_dir

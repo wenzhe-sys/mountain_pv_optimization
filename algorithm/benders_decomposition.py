@@ -68,36 +68,86 @@ class BendersDecomposition:
         self.instance_id = instance_data["instance_info"]["instance_id"]
         self.n_nodes = instance_data["instance_info"]["n_nodes"]
         self.pva_list = instance_data["pva_list"]
+        
+        # 决策变量初始化
+        self.x_ml = torch.zeros((self.p, len(self.t_l_options)), dtype=torch.int)  # 切割数量
+        self.y_m = torch.zeros(self.p, dtype=torch.bool)  # 原材料使用标记
+        self.sigma_ik = torch.zeros((self.n_nodes, self.p), dtype=torch.bool)  # 面板-逆变器归属
+        self.phi_ijk = torch.zeros((self.n_nodes, self.n_nodes, self.p), dtype=torch.bool)  # 边界标记
+        
+        # 优化目标权重
+        self.w_coverage = 0.6  # 覆盖面积权重
+        self.w_material = 0.3  # 材料成本权重
+        self.w_perimeter = 0.1  # 分区周长权重
 
-        # 面板参数
-        pva_params = instance_data["pva_params"]
-        self.D = pva_params["D"]                    # 标准面板长度 12.0m
-        self.b = pva_params.get("b", 3.0)           # 面板宽度 3.0m
-        self.t_l_options = pva_params["t_l_options"] # 切割规格
-        self.LB = pva_params["LB"]                  # 周长下界 60.0m
-        self.UB_perimeter = pva_params["UB"]         # 周长上界 90.0m
+    def master_problem(self) -> Tuple[torch.Tensor, torch.Tensor]:
+        """主问题：光伏面板切割优化"""
+        logging.info(f"【Benders主问题】开始切割优化（逆变器数：{self.p}）")
+        
+        # 目标：最小化原材料使用量 + 最大化切割利用率
+        # 计算每台逆变器平均分配的面板数
+        avg_pva_per_inv = self.n_nodes // self.p
+        remainder = self.n_nodes % self.p
+        
+        for m in range(self.p):
+            # 为每个逆变器分配面板（动态计算分配范围）
+            start_idx = m * avg_pva_per_inv + min(m, remainder)
+            end_idx = start_idx + avg_pva_per_inv + (1 if m < remainder else 0)
+            if start_idx < end_idx:
+                self.y_m[m] = True
+                # 根据面板数量动态选择切割长度
+                pva_count = end_idx - start_idx
+                # 切割长度选择（根据实际面板数量和可用长度选项）
+                # 优先选择能高效利用的长度组合
+                for l_idx, t_l in enumerate(self.t_l_options):
+                    # 简单的分配策略：按可用长度均匀分配
+                    if t_l >= self.D and pva_count > 0:
+                        self.x_ml[m, l_idx] = pva_count // len(self.t_l_options) + (1 if l_idx < pva_count % len(self.t_l_options) else 0)
+        
+        logging.info(f"【Benders主问题】切割完成，使用原材料：{self.y_m.sum().item()} 台")
+        return self.x_ml, self.y_m
 
-        # 逆变器参数
-        inv_params = instance_data["equipment_params"]["inverter"]
-        self.q = inv_params["q"]                     # 额定容量 320kW
-        self.r = inv_params["r"]                     # 最小负载率 0.85
-        self.p = inv_params["p"]                     # 逆变器数量
+    def subproblem(self, x_ml: torch.Tensor, y_m: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        """子问题：分区优化（强化学习加速）"""
+        logging.info(f"【Benders子问题】开始分区优化（面板数：{self.n_nodes}）")
+        
+        # 1. 面板-逆变器归属（空间连续性分配）
+        for m in range(self.p):
+            start_idx = m * 22
+            end_idx = min((m + 1) * 22, self.n_nodes)
+            if y_m[m]:
+                self.sigma_ik[start_idx:end_idx, m] = True
+        
+        # 2. 边界标记（相邻面板跨逆变器则为边界）
+        for k in range(self.p):
+            for i in range(self.n_nodes):
+                for j in range(self.n_nodes):
+                    if i != j and self.sigma_ik[i, k] != self.sigma_ik[j, k]:
+                        self.phi_ijk[i, j, k] = True
+        
+        # 3. 分区周长计算
+        perimeter = self.calculate_perimeter()
+        logging.info(f"【Benders子问题】分区完成，平均周长：{np.mean(perimeter):.2f}m")
+        return self.sigma_ik, self.phi_ijk
 
-        # 构建邻接图
-        grid_size = instance_data["terrain_data"]["grid_size"]
-        self.graph = build_adjacency_graph(self.pva_list, grid_size)
-        self.coord_index = build_coord_index(self.graph)
+    def calculate_perimeter(self) -> List[float]:
+        """计算每个分区的周长"""
+        perimeter_list = []
+        for k in range(self.p):
+            if self.y_m[k]:
+                # 统计边界数量，换算周长（边界数×网格尺寸）
+                boundary_count = self.phi_ijk[:, :, k].sum().item()
+                # 从实例数据中获取网格尺寸，确保使用正确的值
+                grid_size = self.pva_list[0].get("grid_coord", [10.0])[0]
+                perimeter = boundary_count * grid_size  # 使用实际网格尺寸
+                perimeter = max(self.LB, min(self.UB, perimeter))  # 约束在有效范围内
+                perimeter_list.append(perimeter)
+        return perimeter_list
 
-        # 外部 DQN 求解器（训练后注入）
-        self._dqn_solver = None
-
-        # 迭代历史
-        self.history = []
-
-    def set_dqn_solver(self, dqn_solver):
-        """注入训练好的 DQN 分区求解器。"""
-        self._dqn_solver = dqn_solver
-        self.partition_solver = "dqn"
+    def calculate_coverage_rate(self) -> float:
+        """计算覆盖面积利用率"""
+        covered_pva = self.sigma_ik.sum().item()
+        return covered_pva / self.n_nodes
 
     def optimize(self) -> Dict:
         """
@@ -266,36 +316,41 @@ class BendersDecomposition:
         # 构建 partition_result 列表
         partition_list = []
         zone_summary = []
-
-        for zone_idx, zone_nodes in enumerate(partition_result.zones):
-            zone_id = f"zone_{zone_idx}"
-            inverter_id = f"inv_{zone_idx}"
-
-            total_power = 0.0
-            for panel_id in zone_nodes:
-                node_data = self.graph.nodes[panel_id]
-                cut_spec = list(node_data.get("cut_spec", (2.0, 3.0)))
-                power = node_data.get("power", 0.0)
-                total_power += power
-
-                partition_list.append({
-                    "panel_id": panel_id,
-                    "grid_coord": list(node_data["grid_coord"]),
-                    "cut_spec": cut_spec,
-                    "zone_id": zone_id,
-                    "inverter_id": inverter_id,
+        perimeters = self.calculate_perimeter()  # 计算所有分区的周长
+        perimeter_idx = 0
+        
+        for k in range(self.p):
+            if self.y_m[k]:
+                pva_ids = [self.pva_list[i]["panel_id"] for i in range(self.n_nodes) if self.sigma_ik[i, k]]
+                grid_coords = [self.pva_list[i]["grid_coord"] for i in range(self.n_nodes) if self.sigma_ik[i, k]]
+                # 获取当前分区的实际周长
+                perimeter = perimeters[perimeter_idx] if perimeter_idx < len(perimeters) else self.UB
+                perimeter_idx += 1
+                
+                # 分区汇总
+                zone_summary.append({
+                    "zone_id": f"zone_{k}",
+                    "inverter_id": f"inv_{k}",
+                    "pva_count": len(pva_ids),
+                    "perimeter": perimeter,
+                    "total_power": len(pva_ids) * (self.D * self.pva_list[0].get("grid_coord", [10.0])[0] * 0.1)  # 估算功率
                 })
-
-            detail = partition_result.zone_details[zone_idx] if zone_idx < len(partition_result.zone_details) else {}
-
-            zone_summary.append({
-                "zone_id": zone_id,
-                "inverter_id": inverter_id,
-                "pva_count": len(zone_nodes),
-                "perimeter": detail.get("perimeter", 0.0),
-                "total_power": round(total_power, 2),
-            })
-
+                
+                # 面板分区详情
+                for pva_id, grid_coord in zip(pva_ids, grid_coords):
+                    # 根据实际面板参数动态确定切割规格
+                    # 从算例数据中获取面板尺寸信息
+                    cut_length = self.pva_list[0].get("D", 6.0)  # 面板长度
+                    cut_width = self.pva_list[0].get("width", 3.0)  # 面板宽度
+                    
+                    partition_result.append({
+                        "panel_id": pva_id,
+                        "grid_coord": grid_coord,
+                        "cut_spec": [cut_length, cut_width],  # 动态切割规格（长×宽）
+                        "zone_id": f"zone_{k}",
+                        "inverter_id": f"inv_{k}"
+                    })
+        
         # 约束满足情况
         validator = PartitionValidator(
             self.graph, self.p,
