@@ -83,11 +83,13 @@ def train(args):
         print("  ✗ 未找到可用算例", flush=True)
         return
 
-    # 论文参数: gamma=1, tau=0.05, lr=1e-3, batch_size=16, buffer=10000
+    # 对齐开源成功实现: gamma=1, tau=0.01, lr=1e-4, batch_size=64, buffer=50000
+    # train_every=5: 每 5 步训练一次（减少 80% 计算量，对齐原作的 n-step 策略）
     agent = DQNPartitionAgent(
         dim_in=1, dim_embed=64, T=4,
-        lr=args.lr, gamma=1.0, tau=0.05,
-        buffer_size=10000, batch_size=16,
+        lr=args.lr, gamma=1.0, tau=0.01,
+        buffer_size=50000, batch_size=64,
+        train_every=5,
         device=device
     )
 
@@ -103,9 +105,11 @@ def train(args):
         )
 
         if expert_data:
-            print(f"\n  开始行为克隆预训练（{args.pretrain_epochs} 轮）...", flush=True)
+            # 行为克隆用 1e-3（监督学习可用较高学习率），RL 微调再用 args.lr（1e-4）
+            bc_lr = 1e-3
+            print(f"\n  开始行为克隆预训练（{args.pretrain_epochs} 轮, lr={bc_lr}）...", flush=True)
             bc_losses = agent.pretrain_from_expert(
-                expert_data, n_epochs=args.pretrain_epochs, lr=args.lr
+                expert_data, n_epochs=args.pretrain_epochs, lr=bc_lr
             )
             print(f"  行为克隆完成，最终损失: {bc_losses[-1]:.6f}", flush=True)
 
@@ -131,12 +135,12 @@ def train(args):
     ckpt_dir = args.checkpoint_dir
     os.makedirs(ckpt_dir, exist_ok=True)
 
-    # 线性 epsilon 衰减（与参考实现一致）
-    epsilon_start = 0.95
+    # 线性 epsilon 衰减（对齐原作：从 1.0 衰减到 0.05）
+    epsilon_start = 1.0
     epsilon_end = 0.05
 
     print(f"\n【开始训练】轮次 {start_epoch} → {args.epochs} | "
-          f"学习率 {args.lr} | gamma=1.0 | tau=0.05", flush=True)
+          f"学习率 {args.lr} | gamma=1.0 | tau=0.01", flush=True)
     print(f"  存档目录: {ckpt_dir}/", flush=True)
 
     patience_counter = 0
@@ -241,19 +245,19 @@ def evaluate(args):
 def main():
     parser = argparse.ArgumentParser(description="S2V-DQN 训练管线")
     parser.add_argument("--epochs", type=int, default=300)
-    parser.add_argument("--lr", type=float, default=1e-3)
+    parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--device", type=str, default=None)
     parser.add_argument("--resume", type=str, default=None)
     parser.add_argument("--checkpoint-dir", type=str, default="outputs/checkpoints")
-    parser.add_argument("--save-every", type=int, default=50)
-    parser.add_argument("--log-every", type=int, default=10)
+    parser.add_argument("--save-every", type=int, default=25)
+    parser.add_argument("--log-every", type=int, default=1)
     parser.add_argument("--patience", type=int, default=50)
     parser.add_argument("--status", type=str, default=None)
     parser.add_argument("--eval", type=str, default=None)
     # 预训练参数
     parser.add_argument("--skip-pretrain", action="store_true", help="跳过行为克隆预训练")
-    parser.add_argument("--expert-runs", type=int, default=60, help="每算例启发式运行次数")
-    parser.add_argument("--pretrain-epochs", type=int, default=50, help="行为克隆训练轮数")
+    parser.add_argument("--expert-runs", type=int, default=5, help="每算例启发式运行次数")
+    parser.add_argument("--pretrain-epochs", type=int, default=15, help="行为克隆训练轮数")
     args = parser.parse_args()
 
     if args.status:
