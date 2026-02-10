@@ -1,0 +1,22 @@
+name: 代码测试与检查
+on: [pull_request]  # PR提交时自动触发
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 设置Python环境
+        uses: actions/setup-python@v5
+       
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt  # 项目的依赖文件（需提前在仓库根目录创建）
+
+      - name: 运行测试用例
+        run: |
+          python -m pytest tests/  # 假设测试文件放在tests/目录下
