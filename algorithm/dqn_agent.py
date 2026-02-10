@@ -65,6 +65,10 @@ class GraphData:
             self.edge_weight[i, j] = w
             self.edge_weight[j, i] = w
 
+        # Precompute degree vector for S2V term3 optimization
+        # When edge weights are uniform, term3 reduces from O(N^2*d) to O(N*d)
+        self.degree = self.adj.sum(dim=1)  # [N]
+
 
 class GSet:
     """图结构存储，训练时按 graph_id 查找（与参考实现一致）。"""
@@ -184,6 +188,12 @@ class PartitionEnv:
         """
         执行动作。
 
+        Reward design: hybrid (per-step shaping + terminal constraint).
+        - Per-step: small reward based on perimeter delta, giving DQN a
+          gradient signal at every step so Q-values don't rely on long
+          chain propagation through 20 steps of reward=0.
+        - Terminal: strong constraint-based reward for capacity + perimeter.
+
         Args:
             action: 节点索引
 
@@ -191,41 +201,35 @@ class PartitionEnv:
             (next_state, reward, done)
         """
         if self.state[action].item() != 0:
-            # 非法动作
+            # illegal action
             self.done = True
-            return self.state.clone(), -5.0, True
+            return self.state.clone(), -10.0, True
 
-        old_perimeter = self.current_perimeter
-
-        # 加入节点
+        # add node
         self.state[action] = 1
         self.current_zone_indices.add(action)
         self.step_count += 1
 
-        # 增量计算新周长（避免全量重算）
+        # incremental perimeter update
         delta = self._compute_perimeter_delta(action)
-        new_perimeter = old_perimeter + delta
-        self.current_perimeter = new_perimeter
+        self.current_perimeter += delta
 
-        # 奖励 = 周长减少量（论文风格：目标函数变化量）
-        reward = old_perimeter - new_perimeter
+        # per-step shaping reward: prefer nodes that reduce perimeter
+        # delta < 0 means perimeter decreased (good), delta > 0 means increased
+        # scale to ~[-0.5, +0.5] range so it doesn't dominate terminal reward
+        reward = -delta * 0.05
 
-        # 第一步没有有意义的周长变化（从 0 到单节点周长），给 0 奖励
-        if self.step_count == 1:
-            reward = 0.0
-
-        # 终止条件
+        # termination conditions
         if self.step_count >= self.max_size:
             self.done = True
         elif self.step_count >= self.min_size:
             valid = self.get_valid_actions()
             if not valid:
                 self.done = True
-            # 达到目标大小时也可以选择停止
             elif self.step_count >= self.target_size:
                 self.done = True
 
-        # 终端奖励：约束满足 = 奖金，约束违反 = 惩罚
+        # terminal reward: strong constraint-based signal
         if self.done:
             reward += self._compute_terminal_reward()
 
@@ -233,31 +237,46 @@ class PartitionEnv:
 
     def _compute_terminal_reward(self) -> float:
         """
-        计算分区完成时的终端奖励。
+        Terminal reward — strong constraint-based signal at episode end.
 
-        约束满足 → 正奖金，约束违反 → 负惩罚。
-        与每步的周长变化奖励（约 -70 量级）互补，
-        引导 DQN 在追求紧凑的同时满足容量和周长约束。
+        Works together with per-step shaping reward. The per-step reward
+        gives ~[-0.5, +0.5] per step (total ~[-10, +10] over episode),
+        so terminal reward is scaled to dominate: ~[-15, +15].
+
+        Components:
+          1. Capacity:   +5 if in [min, max], else -5 per panel deviation
+          2. Perimeter:  +5 if in [LB, UB], else -0.5 per meter deviation
+          3. Compactness: +0 to +5 bonus for lower perimeter (within bounds)
         """
         size = len(self.current_zone_indices)
         perimeter = self.current_perimeter
         terminal = 0.0
 
-        # 容量约束 [min_size, max_size]
+        # --- Capacity constraint [min_size, max_size] ---
         if self.min_size <= size <= self.max_size:
-            terminal += 20.0
+            terminal += 5.0
+            # bonus for being close to target_size
+            size_dev = abs(size - self.target_size)
+            terminal += max(0.0, 2.0 - 0.5 * size_dev)
         else:
             deficit = max(self.min_size - size, size - self.max_size, 0)
-            terminal -= 8.0 * deficit  # 每差一块面板罚 8
+            terminal -= 5.0 * deficit
 
-        # 周长约束 [LB, UB]（仅在面板数达标时评估，否则周长必然偏小）
+        # --- Perimeter constraint [LB, UB] ---
         if size >= self.min_size:
             if self.perimeter_lb <= perimeter <= self.perimeter_ub:
-                terminal += 20.0
+                terminal += 5.0
+                # compactness bonus: lower perimeter within bounds is better
+                peri_range = max(self.perimeter_ub - self.perimeter_lb, 1.0)
+                compactness = 1.0 - (perimeter - self.perimeter_lb) / peri_range
+                terminal += 3.0 * max(0.0, compactness)
             elif perimeter < self.perimeter_lb:
-                terminal -= 3.0 * (self.perimeter_lb - perimeter)
+                terminal -= 0.5 * (self.perimeter_lb - perimeter)
             else:
-                terminal -= 3.0 * (perimeter - self.perimeter_ub)
+                terminal -= 0.5 * (perimeter - self.perimeter_ub)
+        else:
+            # size too small => perimeter is meaningless, penalize size shortage
+            terminal -= 3.0 * (self.min_size - size)
 
         return terminal
 
@@ -344,8 +363,8 @@ class DQNPartitionAgent:
 
     def __init__(self, dim_in: int = 1, dim_embed: int = 64,
                  T: int = 4, lr: float = 1e-4,
-                 gamma: float = 1.0, tau: float = 0.01,
-                 buffer_size: int = 50000, batch_size: int = 64,
+                 gamma: float = 0.95, tau: float = 0.005,
+                 buffer_size: int = 10000, batch_size: int = 64,
                  train_every: int = 5,
                  device: str = "cpu"):
         self.device = torch.device(device)
@@ -398,7 +417,7 @@ class DQNPartitionAgent:
         ew = gd.edge_weight.to(self.device)
 
         s2v = self.s2v_policy if net_type == "policy" else self.s2v_target
-        return encode_graph(s2v, feat, adj, ew, self.T)
+        return encode_graph(s2v, feat, adj, ew, self.T, degree=gd.degree)
 
     def select_action(self, gd: GraphData, state: torch.Tensor,
                        epsilon: float, valid_actions: List[int]) -> int:
@@ -640,21 +659,24 @@ class DQNPartitionAgent:
         # 反向传播（含梯度裁剪，防止训练爆炸）
         self.optimizer.zero_grad()
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(
-            list(self.s2v_policy.parameters()) + list(self.q_policy.parameters()),
-            max_norm=10.0
-        )
+        # Only clip params that have gradients (Q-head when S2V is frozen)
+        trainable_params = [p for p in
+            list(self.s2v_policy.parameters()) + list(self.q_policy.parameters())
+            if p.requires_grad]
+        if trainable_params:
+            torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=10.0)
         self.optimizer.step()
 
-        # 软更新目标网络
+        # 软更新目标网络 (only update params that are being trained)
         for p, tp in zip(self.s2v_policy.parameters(), self.s2v_target.parameters()):
-            tp.data.copy_(self.tau * p.data + (1 - self.tau) * tp.data)
+            if p.requires_grad:
+                tp.data.copy_(self.tau * p.data + (1 - self.tau) * tp.data)
         for p, tp in zip(self.q_policy.parameters(), self.q_target.parameters()):
             tp.data.copy_(self.tau * p.data + (1 - self.tau) * tp.data)
 
         return loss.item()
 
-    def train_epoch(self, instances: List[Dict], epoch: int,
+    def _train_epoch_sequential(self, instances: List[Dict], epoch: int,
                      epsilon: float, verbose_instances: bool = False) -> Dict:
         """
         训练一个 epoch（遍历所有算例）。
@@ -703,6 +725,12 @@ class DQNPartitionAgent:
                 current_target = remaining_count // zones_left
                 current_max = min(26, remaining_count - (zones_left - 1) * 18) if zones_left > 1 else remaining_count
 
+                # Last zone is forced to take remaining nodes — its negative
+                # rewards would poison the replay buffer and teach Q-network
+                # that good early decisions lead to bad outcomes.
+                # Skip experience collection for the last zone.
+                is_last_zone = (k == n_zones - 1)
+
                 env = PartitionEnv(
                     gd, target_size=current_target,
                     min_size=min(18, remaining_count),
@@ -724,7 +752,8 @@ class DQNPartitionAgent:
                                 action = jumps[0]
                                 next_state, reward, done = env.step(action)
                                 reward -= 2.0  # 跳跃惩罚
-                                self.replay_buffer.push(gid, state, action, reward, next_state, done)
+                                if not is_last_zone:
+                                    self.replay_buffer.push(gid, state, action, reward, next_state, done)
                                 self._global_step += 1
                                 if self._global_step % self.train_every == 0:
                                     loss = self.train_step()
@@ -738,7 +767,8 @@ class DQNPartitionAgent:
                     action = self.select_action(gd, state, epsilon, valid)
                     next_state, reward, done = env.step(action)
 
-                    self.replay_buffer.push(gid, state, action, reward, next_state, done)
+                    if not is_last_zone:
+                        self.replay_buffer.push(gid, state, action, reward, next_state, done)
                     self._global_step += 1
 
                     # 每 train_every 步训练一次（对齐原作，避免每步训练的巨大开销）
@@ -806,6 +836,106 @@ class DQNPartitionAgent:
         self.training_history.append(stats)
         return stats
 
+    # ─── 并行训练（多线程收集经验） ───
+
+    def _collect_single_instance(self, gd: 'GraphData', gid: int,
+                                   n_zones: int, n_nodes: int,
+                                   pva_params: Dict, epsilon: float,
+                                   graph: nx.Graph, inst_id: str) -> Dict:
+        """
+        收集单个算例的经验数据（线程安全：只做推理，不更新梯度）。
+
+        Returns:
+            包含 experiences, reward, constraint_stats 等的字典
+        """
+        excluded_indices = set()
+        zones = []
+        instance_reward = 0.0
+        experiences = []  # (gid, state, action, reward, next_state, done)
+
+        for k in range(n_zones):
+            remaining_count = n_nodes - len(excluded_indices)
+            zones_left = n_zones - k
+            current_target = remaining_count // zones_left
+            current_max = min(26, remaining_count - (zones_left - 1) * 18) if zones_left > 1 else remaining_count
+
+            is_last_zone = (k == n_zones - 1)
+
+            env = PartitionEnv(
+                gd, target_size=current_target,
+                min_size=min(18, remaining_count),
+                max_size=current_max,
+                excluded=excluded_indices,
+                perimeter_lb=pva_params["LB"],
+                perimeter_ub=pva_params["UB"]
+            )
+            state = env.reset()
+
+            episode_reward = 0.0
+            while not env.done:
+                valid = env.get_valid_actions()
+                if not valid:
+                    if env.step_count < env.min_size:
+                        jumps = env._find_jump_candidates()
+                        if jumps:
+                            action = jumps[0]
+                            next_state, reward, done = env.step(action)
+                            reward -= 2.0
+                            if not is_last_zone:
+                                experiences.append((gid, state, action, reward, next_state, done))
+                            state = next_state
+                            episode_reward += reward
+                            continue
+                    break
+
+                action = self.select_action(gd, state, epsilon, valid)
+                next_state, reward, done = env.step(action)
+                if not is_last_zone:
+                    experiences.append((gid, state, action, reward, next_state, done))
+                state = next_state
+                episode_reward += reward
+
+            instance_reward += episode_reward
+            zones.append(env.get_zone_nodes())
+            excluded_indices |= env.current_zone_indices
+
+        # 后处理
+        zones = self._post_process_zones(zones, graph, min_panels=18, max_panels=26)
+
+        # 验证约束
+        validator = PartitionValidator(
+            graph, n_zones, min_panels=18, max_panels=26,
+            perimeter_lb=pva_params["LB"], perimeter_ub=pva_params["UB"]
+        )
+        result = validator.validate(zones)
+
+        cs = {"capacity": 0, "connected": 0, "perimeter": 0, "total_zones": len(result.zone_details)}
+        for detail in result.zone_details:
+            if detail["capacity_ok"]: cs["capacity"] += 1
+            if detail["is_connected"]: cs["connected"] += 1
+            if detail["perimeter_ok"]: cs["perimeter"] += 1
+
+        return {
+            "inst_id": inst_id,
+            "experiences": experiences,
+            "reward": instance_reward,
+            "constraint_stats": cs,
+            "sizes": [len(z) for z in zones],
+            "is_feasible": result.is_feasible,
+        }
+
+    def train_epoch(self, instances: List[Dict], epoch: int,
+                     epsilon: float, verbose_instances: bool = False,
+                     n_workers: int = 8) -> Dict:
+        """
+        训练一个 epoch（串行版，ThreadPoolExecutor 因 GIL 无加速效果已废弃）。
+
+        Delegates to _train_epoch_sequential; n_workers kept for API compat.
+        """
+        return self._train_epoch_sequential(
+            instances, epoch, epsilon, verbose_instances=verbose_instances
+        )
+
     def solve(self, graph: nx.Graph, n_zones: int,
               pva_params: Dict = None) -> PartitionResult:
         """推理：用训练好的策略构建分区方案。所有分区都由 DQN 决策。"""
@@ -852,8 +982,21 @@ class DQNPartitionAgent:
             zones.append(zone_nodes)
             excluded_indices |= env.current_zone_indices
 
-        # 后处理：分配遗漏节点 + 连通性修复 + 重平衡
+        # Post-process: assign missing nodes + connectivity repair + rebalance
         zones = self._post_process_zones(zones, graph, min_panels=18, max_panels=26)
+
+        # Use heuristic's robust rebalance + local search to fix constraint violations
+        from algorithm.partition_heuristic import GreedyPartitioner
+        fixer = GreedyPartitioner(
+            graph, n_zones, min_panels=18, max_panels=26,
+            perimeter_lb=pva_params.get("LB", 60.0),
+            perimeter_ub=pva_params.get("UB", 90.0),
+            local_search_iters=200, random_seed=0
+        )
+        zones = fixer._repair_connectivity(zones)
+        zones = fixer._rebalance(zones)
+        zones = fixer._local_search(zones)
+        zones = fixer._fix_perimeter_violations(zones)
 
         validator = PartitionValidator(
             graph, n_zones, min_panels=18, max_panels=26,
@@ -1132,7 +1275,7 @@ class DQNPartitionAgent:
         }, path)
 
     def load_checkpoint(self, path: str) -> Dict:
-        ckpt = torch.load(path, map_location=self.device)
+        ckpt = torch.load(path, map_location=self.device, weights_only=False)
         self.s2v_policy.load_state_dict(ckpt["s2v_policy"])
         self.s2v_target.load_state_dict(ckpt["s2v_target"])
         self.q_policy.load_state_dict(ckpt["q_policy"])
