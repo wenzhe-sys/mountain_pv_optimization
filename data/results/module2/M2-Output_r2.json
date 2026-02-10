@@ -7,12 +7,8 @@
         "is_used": true,
         "cuts": [
           {
-            "spec_l": 6.0,
-            "quantity": 10
-          },
-          {
-            "spec_l": 8.0,
-            "quantity": 12
+            "spec_l": 12.0,
+            "quantity": 3
           }
         ]
       },
@@ -21,12 +17,8 @@
         "is_used": true,
         "cuts": [
           {
-            "spec_l": 6.0,
-            "quantity": 10
-          },
-          {
-            "spec_l": 8.0,
-            "quantity": 12
+            "spec_l": 12.0,
+            "quantity": 3
           }
         ]
       },
@@ -35,12 +27,8 @@
         "is_used": true,
         "cuts": [
           {
-            "spec_l": 6.0,
-            "quantity": 10
-          },
-          {
-            "spec_l": 8.0,
-            "quantity": 12
+            "spec_l": 12.0,
+            "quantity": 3
           }
         ]
       },
@@ -49,12 +37,8 @@
         "is_used": true,
         "cuts": [
           {
-            "spec_l": 6.0,
-            "quantity": 10
-          },
-          {
-            "spec_l": 8.0,
-            "quantity": 12
+            "spec_l": 12.0,
+            "quantity": 3
           }
         ]
       },
@@ -63,12 +47,8 @@
         "is_used": true,
         "cuts": [
           {
-            "spec_l": 6.0,
-            "quantity": 10
-          },
-          {
-            "spec_l": 8.0,
-            "quantity": 12
+            "spec_l": 12.0,
+            "quantity": 3
           }
         ]
       }
@@ -1529,8 +1509,8 @@
       "transformer_id": "box_0",
       "Q_box": 3200,
       "install_coord": [
-        40,
-        40
+        50,
+        20
       ],
       "connected_inverters": [
         "inv_0",
@@ -1583,10 +1563,10 @@
           "is_trench": true
         }
       ],
-      "cable_length": 60,
+      "cable_length": 41.21320343559643,
       "cost": {
-        "cable": 2100.0,
-        "trenching": 12000.0
+        "cable": 1442.462120245875,
+        "trenching": 8242.640687119285
       }
     }
   ],
@@ -1594,9 +1574,9 @@
     {
       "trench_id": "trench_0",
       "substation_id": "sub_01",
-      "length": 60.0,
+      "length": 41.21320343559643,
       "cable_count": 4,
-      "cost": 12000.0
+      "cost": 8242.640687119285
     }
   ],
   "constraint_satisfaction": {
@@ -1605,5 +1585,5 @@
     "路由连续性": "100%",
     "电缆载流量": "100%"
   },
-  "total_cost": 14153.0
+  "total_cost": 9738.10280736516
 }

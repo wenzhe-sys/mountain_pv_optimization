@@ -6,19 +6,8 @@
       "is_used": true,
       "cuts": [
         {
-          "spec_l": 2.0,
-          "quantity": 6
-        }
-      ],
-      "utilization": 1.0
-    },
-    {
-      "material_id": "mat_1",
-      "is_used": true,
-      "cuts": [
-        {
-          "spec_l": 2.0,
-          "quantity": 6
+          "spec_l": 12.0,
+          "quantity": 3
         }
       ],
       "utilization": 1.0
@@ -28,19 +17,8 @@
       "is_used": true,
       "cuts": [
         {
-          "spec_l": 2.0,
-          "quantity": 6
-        }
-      ],
-      "utilization": 1.0
-    },
-    {
-      "material_id": "mat_3",
-      "is_used": true,
-      "cuts": [
-        {
-          "spec_l": 2.0,
-          "quantity": 6
+          "spec_l": 12.0,
+          "quantity": 3
         }
       ],
       "utilization": 1.0
@@ -50,19 +28,8 @@
       "is_used": true,
       "cuts": [
         {
-          "spec_l": 2.0,
-          "quantity": 6
-        }
-      ],
-      "utilization": 1.0
-    },
-    {
-      "material_id": "mat_5",
-      "is_used": true,
-      "cuts": [
-        {
-          "spec_l": 2.0,
-          "quantity": 6
+          "spec_l": 12.0,
+          "quantity": 3
         }
       ],
       "utilization": 1.0
@@ -72,19 +39,8 @@
       "is_used": true,
       "cuts": [
         {
-          "spec_l": 2.0,
-          "quantity": 6
-        }
-      ],
-      "utilization": 1.0
-    },
-    {
-      "material_id": "mat_7",
-      "is_used": true,
-      "cuts": [
-        {
-          "spec_l": 2.0,
-          "quantity": 6
+          "spec_l": 12.0,
+          "quantity": 3
         }
       ],
       "utilization": 1.0
@@ -94,52 +50,8 @@
       "is_used": true,
       "cuts": [
         {
-          "spec_l": 2.0,
-          "quantity": 6
-        }
-      ],
-      "utilization": 1.0
-    },
-    {
-      "material_id": "mat_9",
-      "is_used": true,
-      "cuts": [
-        {
-          "spec_l": 2.0,
-          "quantity": 6
-        }
-      ],
-      "utilization": 1.0
-    },
-    {
-      "material_id": "mat_10",
-      "is_used": true,
-      "cuts": [
-        {
-          "spec_l": 2.0,
-          "quantity": 6
-        }
-      ],
-      "utilization": 1.0
-    },
-    {
-      "material_id": "mat_11",
-      "is_used": true,
-      "cuts": [
-        {
-          "spec_l": 2.0,
-          "quantity": 6
-        }
-      ],
-      "utilization": 1.0
-    },
-    {
-      "material_id": "mat_12",
-      "is_used": true,
-      "cuts": [
-        {
-          "spec_l": 2.0,
-          "quantity": 6
+          "spec_l": 12.0,
+          "quantity": 3
         }
       ],
       "utilization": 1.0

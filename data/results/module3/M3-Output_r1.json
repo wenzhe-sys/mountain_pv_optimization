@@ -7,12 +7,8 @@
         "is_used": true,
         "cuts": [
           {
-            "spec_l": 6.0,
-            "quantity": 10
-          },
-          {
-            "spec_l": 8.0,
-            "quantity": 12
+            "spec_l": 12.0,
+            "quantity": 3
           }
         ]
       },
@@ -21,12 +17,8 @@
         "is_used": true,
         "cuts": [
           {
-            "spec_l": 6.0,
-            "quantity": 10
-          },
-          {
-            "spec_l": 8.0,
-            "quantity": 12
+            "spec_l": 12.0,
+            "quantity": 3
           }
         ]
       },
@@ -35,12 +27,8 @@
         "is_used": true,
         "cuts": [
           {
-            "spec_l": 6.0,
-            "quantity": 10
-          },
-          {
-            "spec_l": 8.0,
-            "quantity": 12
+            "spec_l": 12.0,
+            "quantity": 3
           }
         ]
       },
@@ -49,12 +37,8 @@
         "is_used": true,
         "cuts": [
           {
-            "spec_l": 6.0,
-            "quantity": 10
-          },
-          {
-            "spec_l": 8.0,
-            "quantity": 12
+            "spec_l": 12.0,
+            "quantity": 3
           }
         ]
       },
@@ -63,12 +47,8 @@
         "is_used": true,
         "cuts": [
           {
-            "spec_l": 6.0,
-            "quantity": 10
-          },
-          {
-            "spec_l": 8.0,
-            "quantity": 12
+            "spec_l": 12.0,
+            "quantity": 3
           }
         ]
       }
@@ -1533,12 +1513,8 @@
           "is_used": true,
           "cuts": [
             {
-              "spec_l": 6.0,
-              "quantity": 10
-            },
-            {
-              "spec_l": 8.0,
-              "quantity": 12
+              "spec_l": 12.0,
+              "quantity": 3
             }
           ]
         },
@@ -1547,12 +1523,8 @@
           "is_used": true,
           "cuts": [
             {
-              "spec_l": 6.0,
-              "quantity": 10
-            },
-            {
-              "spec_l": 8.0,
-              "quantity": 12
+              "spec_l": 12.0,
+              "quantity": 3
             }
           ]
         },
@@ -1561,12 +1533,8 @@
           "is_used": true,
           "cuts": [
             {
-              "spec_l": 6.0,
-              "quantity": 10
-            },
-            {
-              "spec_l": 8.0,
-              "quantity": 12
+              "spec_l": 12.0,
+              "quantity": 3
             }
           ]
         },
@@ -1575,12 +1543,8 @@
           "is_used": true,
           "cuts": [
             {
-              "spec_l": 6.0,
-              "quantity": 10
-            },
-            {
-              "spec_l": 8.0,
-              "quantity": 12
+              "spec_l": 12.0,
+              "quantity": 3
             }
           ]
         },
@@ -1589,12 +1553,8 @@
           "is_used": true,
           "cuts": [
             {
-              "spec_l": 6.0,
-              "quantity": 10
-            },
-            {
-              "spec_l": 8.0,
-              "quantity": 12
+              "spec_l": 12.0,
+              "quantity": 3
             }
           ]
         }
@@ -3055,8 +3015,8 @@
         "transformer_id": "box_0",
         "Q_box": 3200,
         "install_coord": [
-          40,
-          40
+          50,
+          10
         ],
         "connected_inverters": [
           "inv_0",
@@ -3109,10 +3069,10 @@
             "is_trench": true
           }
         ],
-        "cable_length": 60,
+        "cable_length": 53.29689509795745,
         "cost": {
-          "cable": 2100.0,
-          "trenching": 12000.0
+          "cable": 1865.3913284285109,
+          "trenching": 10659.37901959149
         }
       }
     ],
@@ -3120,9 +3080,9 @@
       {
         "trench_id": "trench_0",
         "substation_id": "sub_01",
-        "length": 60.0,
+        "length": 53.29689509795745,
         "cable_count": 3,
-        "cost": 12000.0
+        "cost": 10659.37901959149
       }
     ],
     "constraint_satisfaction": {
@@ -3131,18 +3091,18 @@
       "路由连续性": "100%",
       "电缆载流量": "100%"
     },
-    "total_cost": 14153.0
+    "total_cost": 12577.77034802
   },
   "total_cost_summary": {
-    "construction_cost": 14153.0,
-    "operation_loss_cost": 222955.290543289,
-    "total_cost": 103335.1162173156,
+    "construction_cost": 12577.77034802,
+    "operation_loss_cost": 186568.5716945574,
+    "total_cost": 87205.19902584297,
     "cost_breakdown": {
       "box_purchase": 50.0,
       "box_install": 3.0,
-      "cable": 2100.0,
-      "trenching": 12000.0,
-      "loss": 89182.1162173156
+      "cable": 1865.3913284285109,
+      "trenching": 10659.37901959149,
+      "loss": 74627.42867782297
     }
   },
   "optimized_params": {
@@ -3153,128 +3113,128 @@
   "loss_detail": [
     {
       "year": 1,
-      "P_loss": 52215.448503180356,
-      "loss_cost": 19339.05500117791
+      "P_loss": 43693.79001453933,
+      "loss_cost": 16182.88519057012
     },
     {
       "year": 2,
-      "P_loss": 52215.448503180356,
-      "loss_cost": 17906.532408498064
+      "P_loss": 43693.79001453933,
+      "loss_cost": 14984.152954231593
     },
     {
       "year": 3,
-      "P_loss": 52215.448503180356,
-      "loss_cost": 16580.12260046117
+      "P_loss": 43693.79001453933,
+      "loss_cost": 13874.215698362585
     },
     {
       "year": 4,
-      "P_loss": 52215.448503180356,
-      "loss_cost": 15351.965370797378
+      "P_loss": 43693.79001453933,
+      "loss_cost": 12846.496017002391
     },
     {
       "year": 5,
-      "P_loss": 52215.448503180356,
-      "loss_cost": 14214.782750738312
+      "P_loss": 43693.79001453933,
+      "loss_cost": 11894.903719446658
     },
     {
       "year": 6,
-      "P_loss": 52215.448503180356,
-      "loss_cost": 13161.83588031325
+      "P_loss": 43693.79001453933,
+      "loss_cost": 11013.799740228387
     },
     {
       "year": 7,
-      "P_loss": 52215.448503180356,
-      "loss_cost": 12186.88507436412
+      "P_loss": 43693.79001453933,
+      "loss_cost": 10197.96272243369
     },
     {
       "year": 8,
-      "P_loss": 52215.448503180356,
-      "loss_cost": 11284.152846633444
+      "P_loss": 43693.79001453933,
+      "loss_cost": 9442.55807632749
     },
     {
       "year": 9,
-      "P_loss": 52215.448503180356,
-      "loss_cost": 10448.289672808743
+      "P_loss": 43693.79001453933,
+      "loss_cost": 8743.10932993286
     },
     {
       "year": 10,
-      "P_loss": 52215.448503180356,
-      "loss_cost": 9674.342289637725
+      "P_loss": 43693.79001453933,
+      "loss_cost": 8095.471601789685
     },
     {
       "year": 11,
-      "P_loss": 52215.448503180356,
-      "loss_cost": 8957.724342257152
+      "P_loss": 43693.79001453933,
+      "loss_cost": 7495.807038694154
     },
     {
       "year": 12,
-      "P_loss": 52215.448503180356,
-      "loss_cost": 8294.189205793658
+      "P_loss": 43693.79001453933,
+      "loss_cost": 6940.5620728649565
     },
     {
       "year": 13,
-      "P_loss": 52215.448503180356,
-      "loss_cost": 7679.804820179313
+      "P_loss": 43693.79001453933,
+      "loss_cost": 6426.446363763847
     },
     {
       "year": 14,
-      "P_loss": 52215.448503180356,
-      "loss_cost": 7110.930389054919
+      "P_loss": 43693.79001453933,
+      "loss_cost": 5950.41329978134
     },
     {
       "year": 15,
-      "P_loss": 52215.448503180356,
-      "loss_cost": 6584.19480468048
+      "P_loss": 43693.79001453933,
+      "loss_cost": 5509.641944241981
     },
     {
       "year": 16,
-      "P_loss": 52215.448503180356,
-      "loss_cost": 6096.476671000444
+      "P_loss": 43693.79001453933,
+      "loss_cost": 5101.520318742575
     },
     {
       "year": 17,
-      "P_loss": 52215.448503180356,
-      "loss_cost": 5644.885806481892
+      "P_loss": 43693.79001453933,
+      "loss_cost": 4723.6299247616425
     },
     {
       "year": 18,
-      "P_loss": 52215.448503180356,
-      "loss_cost": 5226.746117112863
+      "P_loss": 43693.79001453933,
+      "loss_cost": 4373.731411816336
     },
     {
       "year": 19,
-      "P_loss": 52215.448503180356,
-      "loss_cost": 4839.579738067466
+      "P_loss": 43693.79001453933,
+      "loss_cost": 4049.751307237348
     },
     {
       "year": 20,
-      "P_loss": 52215.448503180356,
-      "loss_cost": 4481.092350062468
+      "P_loss": 43693.79001453933,
+      "loss_cost": 3749.7697289234698
     },
     {
       "year": 21,
-      "P_loss": 52215.448503180356,
-      "loss_cost": 4149.159583391173
+      "P_loss": 43693.79001453933,
+      "loss_cost": 3472.009008262472
     },
     {
       "year": 22,
-      "P_loss": 52215.448503180356,
-      "loss_cost": 3841.814429065901
+      "P_loss": 43693.79001453933,
+      "loss_cost": 3214.8231557985846
     },
     {
       "year": 23,
-      "P_loss": 52215.448503180356,
-      "loss_cost": 3557.235582468427
+      "P_loss": 43693.79001453933,
+      "loss_cost": 2976.688107220912
     },
     {
       "year": 24,
-      "P_loss": 52215.448503180356,
-      "loss_cost": 3293.7366504337283
+      "P_loss": 43693.79001453933,
+      "loss_cost": 2756.1926918712143
     },
     {
       "year": 25,
-      "P_loss": 52215.448503180356,
-      "loss_cost": 3049.756157809007
+      "P_loss": 43693.79001453933,
+      "loss_cost": 2552.030270251124
     }
   ],
   "constraint_satisfaction": {
@@ -3284,8 +3244,8 @@
   },
   "calculation_params": {
     "current": 200.0,
-    "cable_radius": 0.0165,
-    "cable_length": 60.0,
+    "cable_radius": 0.017,
+    "cable_length": 53.29689509795745,
     "rho": 1.72e-08
   }
 }
