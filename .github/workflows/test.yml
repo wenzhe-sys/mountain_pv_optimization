@@ -1,0 +1,75 @@
+name: 山地光伏项目状态检查
+# 触发条件：推送到main分支、创建/更新PR时触发
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# 多Python版本矩阵（兼容3.9+，避免版本锁定过严）
+jobs:
+  test:
+    runs-on: ubuntu-latest  # 稳定运行环境
+    strategy:
+      fail-fast: false  # 一个版本失败不影响其他版本测试
+      matrix:
+        python-version: ["3.9", "3.10", "3.11"]  # 覆盖项目支持的Python版本
+
+    steps:
+      # 步骤1：拉取仓库代码
+      - name: 拉取项目代码
+        uses: actions/checkout@v4
+
+      # 步骤2：设置Python环境（多版本矩阵）
+      - name: 设置Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"  # 缓存pip依赖，加速后续构建
+
+      # 步骤3：安装依赖（含项目依赖+测试依赖）
+      - name: 安装项目依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest flake8  # 额外安装测试工具和代码规范检查工具
+
+      # 步骤4：代码规范检查（可选但推荐，提升团队代码一致性）
+      - name: 代码格式与规范检查
+        run: |
+          # 检查Python文件语法错误和规范（排除venv等无关目录）
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      # 步骤5：运行单元测试（验证三大模块核心功能）
+      - name: 运行模块单元测试
+        run: |
+          # 临时设置PYTHONPATH，确保能导入model/utils等目录的模块
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
+          # 运行所有测试用例（test_model1~test_model3）
+          pytest tests/test_model1.py -v  # 模块一：切割分区约束测试
+          pytest tests/test_model2.py -v  # 模块二：设备选型+共沟约束测试
+          pytest tests/test_model3.py -v  # 模块三：集成优化+损耗计算测试
+
+      # 步骤6：模块间接口合规性校验（确保数据流转符合《接口协议》）
+      - name: 验证模块接口JSON格式
+        run: |
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
+          # 运行接口校验脚本（需在utils中提前实现接口校验函数）
+          python -c "
+          from utils.load_instance import load_instance, validate_instance
+          from utils.interface_check import check_m1_output, check_m2_output
+          # 加载测试算例
+          instance = load_instance('r1')
+          # 验证算例字段完整性
+          assert validate_instance(instance), '算例字段校验失败'
+          # 验证模块一输出接口（模拟M1-Output）
+          with open('data/results/module1/M1-Output_r1.json', 'r') as f:
+              m1_output = json.load(f)
+          assert check_m1_output(m1_output), 'M1-Output接口校验失败'
+          # 验证模块二输出接口（模拟M2-Output）
+          with open('data/results/module2/M2-Output_r1.json', 'r') as f:
+              m2_output = json.load(f)
+          assert check_m2_output(m2_output), 'M2-Output接口校验失败'
+          print('所有接口校验通过！')
+          "
