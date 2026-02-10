@@ -34,9 +34,6 @@ data/raw/*.zip
 data/raw/*.tif  # DEM地形原始文件（大文件）
 data/processed/*.npy.bak
 data/results/*.log
-data/results/module1/*.json
-data/results/module2/*.json
-data/results/module3/*.json
 
 # 训练产物（模型、日志、可视化等）
 outputs/
