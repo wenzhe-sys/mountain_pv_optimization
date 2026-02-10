@@ -26,31 +26,23 @@ class TestModel1EndToEnd(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        """加载并运行模块一"""
+        """初始化测试环境：加载算例、运行模块一"""
+        # 使用相对路径获取项目根目录
         project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        cls.instance_path = os.path.join(
-            project_root, "data", "processed", "PV", "public", "easy", "public_easy_r1.json"
-        )
-        if os.path.exists(cls.instance_path):
-            cls.model = CuttingPartitionModel(cls.instance_path)
-            cls.output = cls.model.run(verbose=False, max_iter=3)
-            cls.has_data = True
+        # 预处理后的算例路径（符合算例存储规范）
+        cls.instance_path = os.path.join(project_root, "data", "processed", "PV", "public", "easy", "public_easy_r1.json")
+        # 初始化并运行模块一
+        cls.model1 = CuttingPartitionModel(cls.instance_path)
+        cls.module1_output = cls.model1.run()
+        # 加载原始算例用于对比
+        cls.instance = instance_loader.load_instance("r1")
 
-            # 加载原始算例
-            loader = InstanceLoader()
-            cls.instance = loader.load_instance("r1")
-        else:
-            cls.has_data = False
-
-    def test_m1_output_fields(self):
-        """E101: M1-Output 必选字段完整性"""
-        if not self.has_data:
-            self.skipTest("算例数据不可用")
-
-        required = ["instance_id", "cut_result", "partition_result",
-                     "zone_summary", "constraint_satisfaction"]
-        for field in required:
-            self.assertIn(field, self.output, f"缺失字段 {field}（E101）")
+    def test_m1_output_fields_completeness(self):
+        """测试M1-Output接口字段完整性（符合模块接口协议4.1）"""
+        required_fields = ["instance_id", "cut_result", "partition_result", "zone_summary", "constraint_satisfaction"]
+        for field in required_fields:
+            with self.subTest(field=field):
+                self.assertIn(field, self.module1_output, f"M1-Output缺失必选字段：{field}（错误码E101）")
 
     def test_cutting_integer_constraint(self):
         """E102: 切割长度为 2.0 的整数倍"""

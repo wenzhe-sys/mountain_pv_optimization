@@ -1,0 +1,50 @@
+name: CI - 代码质量检查与测试
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: 设置Python环境
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        cache: 'pip'
+    
+    - name: 安装依赖
+      run: |
+        pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: 创建测试所需的目录结构
+      run: |
+        mkdir -p data/processed/PV/public/easy
+        mkdir -p data/results/module1
+        mkdir -p data/results/module2
+        mkdir -p data/results/module3
+        mkdir -p data/results/visualization
+    
+    - name: 运行数据预处理（为测试准备数据）
+      run: |
+        python -c "
+        from utils.data_preprocess import PVDataPreprocessor
+        preprocessor = PVDataPreprocessor()
+        preprocessor.process_single_file('r1.txt')
+        "
+    
+    - name: 运行单元测试
+      run: |
+        python -m unittest discover tests
+    
+    - name: 代码质量检查
+      run: |
+        pip install flake8
+        flake8 --max-line-length=120 --ignore=E501,E203,W503 .

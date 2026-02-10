@@ -23,7 +23,9 @@ class IntegrationOptimizationModel:
         
         self.rl_optimizer = RLIntegrationOptimizer(self.instance_data, self.module2_output.copy())
         
-        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        # 使用相对路径构建结果保存路径
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(current_dir)  # 上两级目录（model目录的父目录）
         self.results_path = os.path.join(project_root, "data", "results", "module3")
         os.makedirs(self.results_path, exist_ok=True)
 

@@ -25,7 +25,25 @@ class BranchAndPrice:
         
         # 模块一输出数据
         self.zone_summary = module1_output["zone_summary"]
-        self.inverter_coords = [(35.0 + k * 5, 35.0 + k * 5) for k in range(self.n_inverters)]  # 逆变器坐标（已对齐网格）
+        
+        # 从模块一输出动态计算逆变器坐标
+        self.inverter_coords = []
+        for zone in self.zone_summary:
+            # 计算该分区内面板的中心坐标作为逆变器位置
+            zone_id = zone["zone_id"]
+            # 从module1_output中查找该分区的所有面板
+            zone_panels = [panel for panel in module1_output["partition_result"] if panel["zone_id"] == zone_id]
+            if zone_panels:
+                # 计算面板坐标的平均值作为逆变器位置
+                avg_x = sum(panel["grid_coord"][0] for panel in zone_panels) / len(zone_panels)
+                avg_y = sum(panel["grid_coord"][1] for panel in zone_panels) / len(zone_panels)
+                # 对齐到网格
+                aligned_coord = self._align_to_grid((avg_x, avg_y))
+                self.inverter_coords.append(aligned_coord)
+            else:
+                # 如果没有面板数据，使用默认对齐网格的坐标
+                self.inverter_coords.append((35.0 + len(self.inverter_coords) * 5, 35.0 + len(self.inverter_coords) * 5))
+        
         self.substation_coord = instance_data["equipment_params"]["substation"]["coord"]
         
         # 决策变量（初始维度占位，后续动态更新）
@@ -108,10 +126,33 @@ class BranchAndPrice:
         # 3. 成本计算
         total_box_cost = n_boxes * self.box_cost[1]  # 3200kVA箱变成本（单台50万）
         total_install_cost = n_boxes * self.install_cost[1]  # 3200kVA安装成本（单台3万）
-        total_cable_length = self.alpha_uvks.sum().item() * 10  # 每条路径段按10m估算
-        total_cable_cost = total_cable_length * self.c2  # 电缆成本=长度×单位成本（35元/m）
-        total_trench_length = self.beta_uvs.sum().item() * 10  # 管沟总长度
-        total_trench_cost = total_trench_length * self.c3  # 管沟成本=长度×单位成本（200元/m）
+        
+        # 计算实际电缆和管沟长度
+        total_cable_length = 0.0
+        total_trench_length = 0.0
+        
+        # 构建所有节点的坐标映射
+        node_coords = {}
+        for k in range(self.n_inverters):
+            node_coords[k] = self.inverter_coords[k]
+        for b in range(n_boxes):
+            node_coords[self.n_inverters + b] = self.aligned_box_coords[b]
+        node_coords[self.n_inverters + n_boxes] = self.substation_coord
+        
+        # 计算实际路径长度
+        for path in paths:
+            for (u, v) in path:
+                if u in node_coords and v in node_coords:
+                    # 计算两点间的欧几里得距离
+                    x1, y1 = node_coords[u]
+                    x2, y2 = node_coords[v]
+                    distance = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+                    total_cable_length += distance
+                    if self.beta_uvs[u, v]:
+                        total_trench_length += distance
+        
+        total_cable_cost = total_cable_length * self.c2  # 电缆成本=长度×单位成本
+        total_trench_cost = total_trench_length * self.c3  # 管沟成本=长度×单位成本
         
         total_cost = total_box_cost + total_install_cost + total_cable_cost + total_trench_cost
         
@@ -133,10 +174,21 @@ class BranchAndPrice:
         # 生成电缆路由结果
         cable_routes = []
         for path_idx, path in enumerate(paths):
-            route_length = len(path) * 10  # 每条边按10m估算
+            # 计算实际路径长度
+            route_length = 0.0
+            for (u, v) in path:
+                if u in node_coords and v in node_coords:
+                    x1, y1 = node_coords[u]
+                    x2, y2 = node_coords[v]
+                    route_length += np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+            
+            # 获取路径对应的逆变器ID
+            first_inverter_idx = next((u for u, v in path if u < self.n_inverters), path_idx*10)
+            first_inverter_idx = min(first_inverter_idx, self.n_inverters - 1)
+            
             cable_routes.append({
                 "route_id": f"route_{path_idx}",
-                "inverter_id": f"inv_{path_idx*10}",  # 路径对应的首个逆变器ID
+                "inverter_id": f"inv_{first_inverter_idx}",  # 路径对应的首个逆变器ID
                 "transformer_id": f"box_{path_idx}",
                 "substation_id": "sub_01",
                 "edges": [{"u": f"v{u}", "v": f"v{v}", "is_trench": True} for (u, v) in path],
