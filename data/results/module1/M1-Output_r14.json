@@ -214,10 +214,10 @@
   ],
   "partition_result": [
     {
-      "panel_id": "pva_62",
+      "panel_id": "pva_65",
       "grid_coord": [
         57,
-        7
+        13
       ],
       "cut_spec": [
         2.0,
@@ -227,10 +227,10 @@
       "inverter_id": "inv_0"
     },
     {
-      "panel_id": "pva_61",
+      "panel_id": "pva_50",
       "grid_coord": [
         57,
-        5
+        15
       ],
       "cut_spec": [
         2.0,
@@ -240,62 +240,10 @@
       "inverter_id": "inv_0"
     },
     {
-      "panel_id": "pva_44",
-      "grid_coord": [
-        57,
-        2
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_0",
-      "inverter_id": "inv_0"
-    },
-    {
-      "panel_id": "pva_9",
-      "grid_coord": [
-        53,
-        7
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_0",
-      "inverter_id": "inv_0"
-    },
-    {
-      "panel_id": "pva_76",
-      "grid_coord": [
-        58,
-        2
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_0",
-      "inverter_id": "inv_0"
-    },
-    {
-      "panel_id": "pva_45",
-      "grid_coord": [
-        57,
-        5
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_0",
-      "inverter_id": "inv_0"
-    },
-    {
-      "panel_id": "pva_94",
+      "panel_id": "pva_100",
       "grid_coord": [
         59,
-        7
+        19
       ],
       "cut_spec": [
         2.0,
@@ -305,10 +253,10 @@
       "inverter_id": "inv_0"
     },
     {
-      "panel_id": "pva_36",
+      "panel_id": "pva_53",
       "grid_coord": [
-        56,
-        2
+        57,
+        21
       ],
       "cut_spec": [
         2.0,
@@ -318,10 +266,10 @@
       "inverter_id": "inv_0"
     },
     {
-      "panel_id": "pva_27",
+      "panel_id": "pva_68",
       "grid_coord": [
-        55,
-        5
+        57,
+        19
       ],
       "cut_spec": [
         2.0,
@@ -331,10 +279,10 @@
       "inverter_id": "inv_0"
     },
     {
-      "panel_id": "pva_78",
+      "panel_id": "pva_51",
       "grid_coord": [
-        58,
-        7
+        57,
+        17
       ],
       "cut_spec": [
         2.0,
@@ -344,49 +292,10 @@
       "inverter_id": "inv_0"
     },
     {
-      "panel_id": "pva_77",
-      "grid_coord": [
-        58,
-        5
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_0",
-      "inverter_id": "inv_0"
-    },
-    {
-      "panel_id": "pva_8",
-      "grid_coord": [
-        53,
-        5
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_0",
-      "inverter_id": "inv_0"
-    },
-    {
-      "panel_id": "pva_28",
-      "grid_coord": [
-        55,
-        7
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_0",
-      "inverter_id": "inv_0"
-    },
-    {
-      "panel_id": "pva_93",
+      "panel_id": "pva_101",
       "grid_coord": [
         59,
-        5
+        21
       ],
       "cut_spec": [
         2.0,
@@ -396,36 +305,10 @@
       "inverter_id": "inv_0"
     },
     {
-      "panel_id": "pva_92",
-      "grid_coord": [
-        59,
-        2
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_0",
-      "inverter_id": "inv_0"
-    },
-    {
-      "panel_id": "pva_17",
-      "grid_coord": [
-        54,
-        5
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_0",
-      "inverter_id": "inv_0"
-    },
-    {
-      "panel_id": "pva_60",
+      "panel_id": "pva_66",
       "grid_coord": [
         57,
-        2
+        15
       ],
       "cut_spec": [
         2.0,
@@ -435,49 +318,10 @@
       "inverter_id": "inv_0"
     },
     {
-      "panel_id": "pva_26",
-      "grid_coord": [
-        55,
-        2
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_0",
-      "inverter_id": "inv_0"
-    },
-    {
-      "panel_id": "pva_18",
-      "grid_coord": [
-        54,
-        7
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_0",
-      "inverter_id": "inv_0"
-    },
-    {
-      "panel_id": "pva_37",
-      "grid_coord": [
-        56,
-        5
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_0",
-      "inverter_id": "inv_0"
-    },
-    {
-      "panel_id": "pva_46",
+      "panel_id": "pva_70",
       "grid_coord": [
         57,
-        7
+        24
       ],
       "cut_spec": [
         2.0,
@@ -487,75 +331,426 @@
       "inverter_id": "inv_0"
     },
     {
-      "panel_id": "pva_38",
-      "grid_coord": [
-        56,
-        7
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_0",
-      "inverter_id": "inv_0"
-    },
-    {
-      "panel_id": "pva_87",
+      "panel_id": "pva_85",
       "grid_coord": [
         58,
-        26
+        21
       ],
       "cut_spec": [
         2.0,
         3.0
       ],
-      "zone_id": "zone_1",
-      "inverter_id": "inv_1"
+      "zone_id": "zone_0",
+      "inverter_id": "inv_0"
     },
     {
-      "panel_id": "pva_58",
+      "panel_id": "pva_67",
       "grid_coord": [
         57,
-        32
+        17
       ],
       "cut_spec": [
         2.0,
         3.0
       ],
-      "zone_id": "zone_1",
-      "inverter_id": "inv_1"
+      "zone_id": "zone_0",
+      "inverter_id": "inv_0"
     },
     {
-      "panel_id": "pva_59",
+      "panel_id": "pva_69",
       "grid_coord": [
         57,
-        34
+        21
       ],
       "cut_spec": [
         2.0,
         3.0
       ],
-      "zone_id": "zone_1",
-      "inverter_id": "inv_1"
-    },
-    {
-      "panel_id": "pva_74",
-      "grid_coord": [
-        57,
-        32
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_1",
-      "inverter_id": "inv_1"
+      "zone_id": "zone_0",
+      "inverter_id": "inv_0"
     },
     {
       "panel_id": "pva_102",
       "grid_coord": [
         59,
         24
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_0",
+      "inverter_id": "inv_0"
+    },
+    {
+      "panel_id": "pva_82",
+      "grid_coord": [
+        58,
+        15
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_0",
+      "inverter_id": "inv_0"
+    },
+    {
+      "panel_id": "pva_54",
+      "grid_coord": [
+        57,
+        24
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_0",
+      "inverter_id": "inv_0"
+    },
+    {
+      "panel_id": "pva_98",
+      "grid_coord": [
+        59,
+        15
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_0",
+      "inverter_id": "inv_0"
+    },
+    {
+      "panel_id": "pva_83",
+      "grid_coord": [
+        58,
+        17
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_0",
+      "inverter_id": "inv_0"
+    },
+    {
+      "panel_id": "pva_84",
+      "grid_coord": [
+        58,
+        19
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_0",
+      "inverter_id": "inv_0"
+    },
+    {
+      "panel_id": "pva_52",
+      "grid_coord": [
+        57,
+        19
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_0",
+      "inverter_id": "inv_0"
+    },
+    {
+      "panel_id": "pva_99",
+      "grid_coord": [
+        59,
+        17
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_0",
+      "inverter_id": "inv_0"
+    },
+    {
+      "panel_id": "pva_40",
+      "grid_coord": [
+        56,
+        11
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_1",
+      "inverter_id": "inv_1"
+    },
+    {
+      "panel_id": "pva_80",
+      "grid_coord": [
+        58,
+        11
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_1",
+      "inverter_id": "inv_1"
+    },
+    {
+      "panel_id": "pva_48",
+      "grid_coord": [
+        57,
+        11
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_1",
+      "inverter_id": "inv_1"
+    },
+    {
+      "panel_id": "pva_10",
+      "grid_coord": [
+        53,
+        9
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_1",
+      "inverter_id": "inv_1"
+    },
+    {
+      "panel_id": "pva_21",
+      "grid_coord": [
+        54,
+        13
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_1",
+      "inverter_id": "inv_1"
+    },
+    {
+      "panel_id": "pva_96",
+      "grid_coord": [
+        59,
+        11
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_1",
+      "inverter_id": "inv_1"
+    },
+    {
+      "panel_id": "pva_47",
+      "grid_coord": [
+        57,
+        9
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_1",
+      "inverter_id": "inv_1"
+    },
+    {
+      "panel_id": "pva_79",
+      "grid_coord": [
+        58,
+        9
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_1",
+      "inverter_id": "inv_1"
+    },
+    {
+      "panel_id": "pva_29",
+      "grid_coord": [
+        55,
+        9
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_1",
+      "inverter_id": "inv_1"
+    },
+    {
+      "panel_id": "pva_97",
+      "grid_coord": [
+        59,
+        13
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_1",
+      "inverter_id": "inv_1"
+    },
+    {
+      "panel_id": "pva_31",
+      "grid_coord": [
+        55,
+        13
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_1",
+      "inverter_id": "inv_1"
+    },
+    {
+      "panel_id": "pva_41",
+      "grid_coord": [
+        56,
+        13
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_1",
+      "inverter_id": "inv_1"
+    },
+    {
+      "panel_id": "pva_11",
+      "grid_coord": [
+        53,
+        11
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_1",
+      "inverter_id": "inv_1"
+    },
+    {
+      "panel_id": "pva_64",
+      "grid_coord": [
+        57,
+        11
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_1",
+      "inverter_id": "inv_1"
+    },
+    {
+      "panel_id": "pva_49",
+      "grid_coord": [
+        57,
+        13
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_1",
+      "inverter_id": "inv_1"
+    },
+    {
+      "panel_id": "pva_30",
+      "grid_coord": [
+        55,
+        11
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_1",
+      "inverter_id": "inv_1"
+    },
+    {
+      "panel_id": "pva_81",
+      "grid_coord": [
+        58,
+        13
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_1",
+      "inverter_id": "inv_1"
+    },
+    {
+      "panel_id": "pva_20",
+      "grid_coord": [
+        54,
+        11
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_1",
+      "inverter_id": "inv_1"
+    },
+    {
+      "panel_id": "pva_39",
+      "grid_coord": [
+        56,
+        9
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_1",
+      "inverter_id": "inv_1"
+    },
+    {
+      "panel_id": "pva_95",
+      "grid_coord": [
+        59,
+        9
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_1",
+      "inverter_id": "inv_1"
+    },
+    {
+      "panel_id": "pva_19",
+      "grid_coord": [
+        54,
+        9
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_1",
+      "inverter_id": "inv_1"
+    },
+    {
+      "panel_id": "pva_63",
+      "grid_coord": [
+        57,
+        9
       ],
       "cut_spec": [
         2.0,
@@ -574,138 +769,21 @@
         2.0,
         3.0
       ],
-      "zone_id": "zone_1",
-      "inverter_id": "inv_1"
+      "zone_id": "zone_2",
+      "inverter_id": "inv_2"
     },
     {
-      "panel_id": "pva_91",
+      "panel_id": "pva_87",
       "grid_coord": [
         58,
-        34
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_1",
-      "inverter_id": "inv_1"
-    },
-    {
-      "panel_id": "pva_57",
-      "grid_coord": [
-        57,
-        30
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_1",
-      "inverter_id": "inv_1"
-    },
-    {
-      "panel_id": "pva_56",
-      "grid_coord": [
-        57,
-        28
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_1",
-      "inverter_id": "inv_1"
-    },
-    {
-      "panel_id": "pva_105",
-      "grid_coord": [
-        59,
-        30
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_1",
-      "inverter_id": "inv_1"
-    },
-    {
-      "panel_id": "pva_71",
-      "grid_coord": [
-        57,
         26
       ],
       "cut_spec": [
         2.0,
         3.0
       ],
-      "zone_id": "zone_1",
-      "inverter_id": "inv_1"
-    },
-    {
-      "panel_id": "pva_73",
-      "grid_coord": [
-        57,
-        30
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_1",
-      "inverter_id": "inv_1"
-    },
-    {
-      "panel_id": "pva_103",
-      "grid_coord": [
-        59,
-        26
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_1",
-      "inverter_id": "inv_1"
-    },
-    {
-      "panel_id": "pva_104",
-      "grid_coord": [
-        59,
-        28
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_1",
-      "inverter_id": "inv_1"
-    },
-    {
-      "panel_id": "pva_90",
-      "grid_coord": [
-        58,
-        32
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_1",
-      "inverter_id": "inv_1"
-    },
-    {
-      "panel_id": "pva_72",
-      "grid_coord": [
-        57,
-        28
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_1",
-      "inverter_id": "inv_1"
+      "zone_id": "zone_2",
+      "inverter_id": "inv_2"
     },
     {
       "panel_id": "pva_89",
@@ -717,8 +795,73 @@
         2.0,
         3.0
       ],
-      "zone_id": "zone_1",
-      "inverter_id": "inv_1"
+      "zone_id": "zone_2",
+      "inverter_id": "inv_2"
+    },
+    {
+      "panel_id": "pva_103",
+      "grid_coord": [
+        59,
+        26
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_2",
+      "inverter_id": "inv_2"
+    },
+    {
+      "panel_id": "pva_104",
+      "grid_coord": [
+        59,
+        28
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_2",
+      "inverter_id": "inv_2"
+    },
+    {
+      "panel_id": "pva_58",
+      "grid_coord": [
+        57,
+        32
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_2",
+      "inverter_id": "inv_2"
+    },
+    {
+      "panel_id": "pva_105",
+      "grid_coord": [
+        59,
+        30
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_2",
+      "inverter_id": "inv_2"
+    },
+    {
+      "panel_id": "pva_57",
+      "grid_coord": [
+        57,
+        30
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_2",
+      "inverter_id": "inv_2"
     },
     {
       "panel_id": "pva_88",
@@ -730,8 +873,34 @@
         2.0,
         3.0
       ],
-      "zone_id": "zone_1",
-      "inverter_id": "inv_1"
+      "zone_id": "zone_2",
+      "inverter_id": "inv_2"
+    },
+    {
+      "panel_id": "pva_91",
+      "grid_coord": [
+        58,
+        34
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_2",
+      "inverter_id": "inv_2"
+    },
+    {
+      "panel_id": "pva_86",
+      "grid_coord": [
+        58,
+        24
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_2",
+      "inverter_id": "inv_2"
     },
     {
       "panel_id": "pva_107",
@@ -743,11 +912,50 @@
         2.0,
         3.0
       ],
-      "zone_id": "zone_1",
-      "inverter_id": "inv_1"
+      "zone_id": "zone_2",
+      "inverter_id": "inv_2"
     },
     {
-      "panel_id": "pva_75",
+      "panel_id": "pva_90",
+      "grid_coord": [
+        58,
+        32
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_2",
+      "inverter_id": "inv_2"
+    },
+    {
+      "panel_id": "pva_72",
+      "grid_coord": [
+        57,
+        28
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_2",
+      "inverter_id": "inv_2"
+    },
+    {
+      "panel_id": "pva_71",
+      "grid_coord": [
+        57,
+        26
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_2",
+      "inverter_id": "inv_2"
+    },
+    {
+      "panel_id": "pva_59",
       "grid_coord": [
         57,
         34
@@ -756,8 +964,47 @@
         2.0,
         3.0
       ],
-      "zone_id": "zone_1",
-      "inverter_id": "inv_1"
+      "zone_id": "zone_2",
+      "inverter_id": "inv_2"
+    },
+    {
+      "panel_id": "pva_73",
+      "grid_coord": [
+        57,
+        30
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_2",
+      "inverter_id": "inv_2"
+    },
+    {
+      "panel_id": "pva_74",
+      "grid_coord": [
+        57,
+        32
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_2",
+      "inverter_id": "inv_2"
+    },
+    {
+      "panel_id": "pva_56",
+      "grid_coord": [
+        57,
+        28
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_2",
+      "inverter_id": "inv_2"
     },
     {
       "panel_id": "pva_106",
@@ -769,14 +1016,14 @@
         2.0,
         3.0
       ],
-      "zone_id": "zone_1",
-      "inverter_id": "inv_1"
+      "zone_id": "zone_2",
+      "inverter_id": "inv_2"
     },
     {
-      "panel_id": "pva_4",
+      "panel_id": "pva_75",
       "grid_coord": [
-        52,
-        15
+        57,
+        34
       ],
       "cut_spec": [
         2.0,
@@ -786,225 +1033,290 @@
       "inverter_id": "inv_2"
     },
     {
-      "panel_id": "pva_15",
+      "panel_id": "pva_76",
+      "grid_coord": [
+        58,
+        2
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_3",
+      "inverter_id": "inv_3"
+    },
+    {
+      "panel_id": "pva_45",
+      "grid_coord": [
+        57,
+        5
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_3",
+      "inverter_id": "inv_3"
+    },
+    {
+      "panel_id": "pva_62",
+      "grid_coord": [
+        57,
+        7
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_3",
+      "inverter_id": "inv_3"
+    },
+    {
+      "panel_id": "pva_8",
       "grid_coord": [
         53,
-        19
+        5
       ],
       "cut_spec": [
         2.0,
         3.0
       ],
-      "zone_id": "zone_2",
-      "inverter_id": "inv_2"
+      "zone_id": "zone_3",
+      "inverter_id": "inv_3"
     },
     {
-      "panel_id": "pva_13",
+      "panel_id": "pva_93",
       "grid_coord": [
-        53,
-        15
+        59,
+        5
       ],
       "cut_spec": [
         2.0,
         3.0
       ],
-      "zone_id": "zone_2",
-      "inverter_id": "inv_2"
+      "zone_id": "zone_3",
+      "inverter_id": "inv_3"
     },
     {
-      "panel_id": "pva_22",
+      "panel_id": "pva_37",
+      "grid_coord": [
+        56,
+        5
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_3",
+      "inverter_id": "inv_3"
+    },
+    {
+      "panel_id": "pva_17",
       "grid_coord": [
         54,
-        15
+        5
       ],
       "cut_spec": [
         2.0,
         3.0
       ],
-      "zone_id": "zone_2",
-      "inverter_id": "inv_2"
+      "zone_id": "zone_3",
+      "inverter_id": "inv_3"
     },
     {
-      "panel_id": "pva_32",
+      "panel_id": "pva_44",
       "grid_coord": [
-        55,
-        15
+        57,
+        2
       ],
       "cut_spec": [
         2.0,
         3.0
       ],
-      "zone_id": "zone_2",
-      "inverter_id": "inv_2"
+      "zone_id": "zone_3",
+      "inverter_id": "inv_3"
     },
     {
-      "panel_id": "pva_33",
-      "grid_coord": [
-        55,
-        17
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_2",
-      "inverter_id": "inv_2"
-    },
-    {
-      "panel_id": "pva_12",
+      "panel_id": "pva_9",
       "grid_coord": [
         53,
-        13
+        7
       ],
       "cut_spec": [
         2.0,
         3.0
       ],
-      "zone_id": "zone_2",
-      "inverter_id": "inv_2"
+      "zone_id": "zone_3",
+      "inverter_id": "inv_3"
     },
     {
-      "panel_id": "pva_35",
+      "panel_id": "pva_61",
+      "grid_coord": [
+        57,
+        5
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_3",
+      "inverter_id": "inv_3"
+    },
+    {
+      "panel_id": "pva_27",
       "grid_coord": [
         55,
-        21
+        5
       ],
       "cut_spec": [
         2.0,
         3.0
       ],
-      "zone_id": "zone_2",
-      "inverter_id": "inv_2"
+      "zone_id": "zone_3",
+      "inverter_id": "inv_3"
     },
     {
-      "panel_id": "pva_2",
-      "grid_coord": [
-        52,
-        21
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_2",
-      "inverter_id": "inv_2"
-    },
-    {
-      "panel_id": "pva_24",
+      "panel_id": "pva_18",
       "grid_coord": [
         54,
-        19
+        7
       ],
       "cut_spec": [
         2.0,
         3.0
       ],
-      "zone_id": "zone_2",
-      "inverter_id": "inv_2"
+      "zone_id": "zone_3",
+      "inverter_id": "inv_3"
     },
     {
-      "panel_id": "pva_25",
+      "panel_id": "pva_77",
       "grid_coord": [
-        54,
-        21
+        58,
+        5
       ],
       "cut_spec": [
         2.0,
         3.0
       ],
-      "zone_id": "zone_2",
-      "inverter_id": "inv_2"
+      "zone_id": "zone_3",
+      "inverter_id": "inv_3"
     },
     {
-      "panel_id": "pva_7",
+      "panel_id": "pva_36",
       "grid_coord": [
-        52,
-        21
+        56,
+        2
       ],
       "cut_spec": [
         2.0,
         3.0
       ],
-      "zone_id": "zone_2",
-      "inverter_id": "inv_2"
+      "zone_id": "zone_3",
+      "inverter_id": "inv_3"
     },
     {
-      "panel_id": "pva_11",
+      "panel_id": "pva_38",
       "grid_coord": [
-        53,
-        11
+        56,
+        7
       ],
       "cut_spec": [
         2.0,
         3.0
       ],
-      "zone_id": "zone_2",
-      "inverter_id": "inv_2"
+      "zone_id": "zone_3",
+      "inverter_id": "inv_3"
     },
     {
-      "panel_id": "pva_6",
+      "panel_id": "pva_46",
       "grid_coord": [
-        52,
-        19
+        57,
+        7
       ],
       "cut_spec": [
         2.0,
         3.0
       ],
-      "zone_id": "zone_2",
-      "inverter_id": "inv_2"
+      "zone_id": "zone_3",
+      "inverter_id": "inv_3"
     },
     {
-      "panel_id": "pva_1",
-      "grid_coord": [
-        52,
-        19
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_2",
-      "inverter_id": "inv_2"
-    },
-    {
-      "panel_id": "pva_0",
-      "grid_coord": [
-        51,
-        21
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_2",
-      "inverter_id": "inv_2"
-    },
-    {
-      "panel_id": "pva_5",
-      "grid_coord": [
-        52,
-        17
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_2",
-      "inverter_id": "inv_2"
-    },
-    {
-      "panel_id": "pva_34",
+      "panel_id": "pva_28",
       "grid_coord": [
         55,
-        19
+        7
       ],
       "cut_spec": [
         2.0,
         3.0
       ],
-      "zone_id": "zone_2",
-      "inverter_id": "inv_2"
+      "zone_id": "zone_3",
+      "inverter_id": "inv_3"
+    },
+    {
+      "panel_id": "pva_92",
+      "grid_coord": [
+        59,
+        2
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_3",
+      "inverter_id": "inv_3"
+    },
+    {
+      "panel_id": "pva_26",
+      "grid_coord": [
+        55,
+        2
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_3",
+      "inverter_id": "inv_3"
+    },
+    {
+      "panel_id": "pva_94",
+      "grid_coord": [
+        59,
+        7
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_3",
+      "inverter_id": "inv_3"
+    },
+    {
+      "panel_id": "pva_60",
+      "grid_coord": [
+        57,
+        2
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_3",
+      "inverter_id": "inv_3"
+    },
+    {
+      "panel_id": "pva_78",
+      "grid_coord": [
+        58,
+        7
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_3",
+      "inverter_id": "inv_3"
     },
     {
       "panel_id": "pva_14",
@@ -1016,8 +1328,21 @@
         2.0,
         3.0
       ],
-      "zone_id": "zone_2",
-      "inverter_id": "inv_2"
+      "zone_id": "zone_4",
+      "inverter_id": "inv_4"
+    },
+    {
+      "panel_id": "pva_32",
+      "grid_coord": [
+        55,
+        15
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_4",
+      "inverter_id": "inv_4"
     },
     {
       "panel_id": "pva_16",
@@ -1029,351 +1354,13 @@
         2.0,
         3.0
       ],
-      "zone_id": "zone_2",
-      "inverter_id": "inv_2"
+      "zone_id": "zone_4",
+      "inverter_id": "inv_4"
     },
     {
-      "panel_id": "pva_3",
-      "grid_coord": [
-        52,
-        13
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_2",
-      "inverter_id": "inv_2"
-    },
-    {
-      "panel_id": "pva_23",
-      "grid_coord": [
-        54,
-        17
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_2",
-      "inverter_id": "inv_2"
-    },
-    {
-      "panel_id": "pva_40",
-      "grid_coord": [
-        56,
-        11
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_3",
-      "inverter_id": "inv_3"
-    },
-    {
-      "panel_id": "pva_97",
-      "grid_coord": [
-        59,
-        13
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_3",
-      "inverter_id": "inv_3"
-    },
-    {
-      "panel_id": "pva_96",
-      "grid_coord": [
-        59,
-        11
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_3",
-      "inverter_id": "inv_3"
-    },
-    {
-      "panel_id": "pva_79",
-      "grid_coord": [
-        58,
-        9
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_3",
-      "inverter_id": "inv_3"
-    },
-    {
-      "panel_id": "pva_21",
-      "grid_coord": [
-        54,
-        13
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_3",
-      "inverter_id": "inv_3"
-    },
-    {
-      "panel_id": "pva_19",
-      "grid_coord": [
-        54,
-        9
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_3",
-      "inverter_id": "inv_3"
-    },
-    {
-      "panel_id": "pva_20",
-      "grid_coord": [
-        54,
-        11
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_3",
-      "inverter_id": "inv_3"
-    },
-    {
-      "panel_id": "pva_31",
-      "grid_coord": [
-        55,
-        13
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_3",
-      "inverter_id": "inv_3"
-    },
-    {
-      "panel_id": "pva_95",
-      "grid_coord": [
-        59,
-        9
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_3",
-      "inverter_id": "inv_3"
-    },
-    {
-      "panel_id": "pva_30",
-      "grid_coord": [
-        55,
-        11
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_3",
-      "inverter_id": "inv_3"
-    },
-    {
-      "panel_id": "pva_64",
-      "grid_coord": [
-        57,
-        11
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_3",
-      "inverter_id": "inv_3"
-    },
-    {
-      "panel_id": "pva_65",
-      "grid_coord": [
-        57,
-        13
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_3",
-      "inverter_id": "inv_3"
-    },
-    {
-      "panel_id": "pva_41",
-      "grid_coord": [
-        56,
-        13
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_3",
-      "inverter_id": "inv_3"
-    },
-    {
-      "panel_id": "pva_49",
-      "grid_coord": [
-        57,
-        13
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_3",
-      "inverter_id": "inv_3"
-    },
-    {
-      "panel_id": "pva_29",
-      "grid_coord": [
-        55,
-        9
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_3",
-      "inverter_id": "inv_3"
-    },
-    {
-      "panel_id": "pva_10",
+      "panel_id": "pva_13",
       "grid_coord": [
         53,
-        9
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_3",
-      "inverter_id": "inv_3"
-    },
-    {
-      "panel_id": "pva_48",
-      "grid_coord": [
-        57,
-        11
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_3",
-      "inverter_id": "inv_3"
-    },
-    {
-      "panel_id": "pva_47",
-      "grid_coord": [
-        57,
-        9
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_3",
-      "inverter_id": "inv_3"
-    },
-    {
-      "panel_id": "pva_81",
-      "grid_coord": [
-        58,
-        13
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_3",
-      "inverter_id": "inv_3"
-    },
-    {
-      "panel_id": "pva_63",
-      "grid_coord": [
-        57,
-        9
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_3",
-      "inverter_id": "inv_3"
-    },
-    {
-      "panel_id": "pva_80",
-      "grid_coord": [
-        58,
-        11
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_3",
-      "inverter_id": "inv_3"
-    },
-    {
-      "panel_id": "pva_39",
-      "grid_coord": [
-        56,
-        9
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_3",
-      "inverter_id": "inv_3"
-    },
-    {
-      "panel_id": "pva_85",
-      "grid_coord": [
-        58,
-        21
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_4",
-      "inverter_id": "inv_4"
-    },
-    {
-      "panel_id": "pva_69",
-      "grid_coord": [
-        57,
-        21
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_4",
-      "inverter_id": "inv_4"
-    },
-    {
-      "panel_id": "pva_66",
-      "grid_coord": [
-        57,
         15
       ],
       "cut_spec": [
@@ -1384,10 +1371,10 @@
       "inverter_id": "inv_4"
     },
     {
-      "panel_id": "pva_70",
+      "panel_id": "pva_24",
       "grid_coord": [
-        57,
-        24
+        54,
+        19
       ],
       "cut_spec": [
         2.0,
@@ -1397,10 +1384,10 @@
       "inverter_id": "inv_4"
     },
     {
-      "panel_id": "pva_99",
+      "panel_id": "pva_35",
       "grid_coord": [
-        59,
-        17
+        55,
+        21
       ],
       "cut_spec": [
         2.0,
@@ -1410,10 +1397,10 @@
       "inverter_id": "inv_4"
     },
     {
-      "panel_id": "pva_54",
+      "panel_id": "pva_7",
       "grid_coord": [
-        57,
-        24
+        52,
+        21
       ],
       "cut_spec": [
         2.0,
@@ -1423,10 +1410,36 @@
       "inverter_id": "inv_4"
     },
     {
-      "panel_id": "pva_98",
+      "panel_id": "pva_25",
       "grid_coord": [
-        59,
-        15
+        54,
+        21
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_4",
+      "inverter_id": "inv_4"
+    },
+    {
+      "panel_id": "pva_0",
+      "grid_coord": [
+        51,
+        21
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_4",
+      "inverter_id": "inv_4"
+    },
+    {
+      "panel_id": "pva_34",
+      "grid_coord": [
+        55,
+        19
       ],
       "cut_spec": [
         2.0,
@@ -1449,48 +1462,9 @@
       "inverter_id": "inv_4"
     },
     {
-      "panel_id": "pva_82",
+      "panel_id": "pva_2",
       "grid_coord": [
-        58,
-        15
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_4",
-      "inverter_id": "inv_4"
-    },
-    {
-      "panel_id": "pva_83",
-      "grid_coord": [
-        58,
-        17
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_4",
-      "inverter_id": "inv_4"
-    },
-    {
-      "panel_id": "pva_67",
-      "grid_coord": [
-        57,
-        17
-      ],
-      "cut_spec": [
-        2.0,
-        3.0
-      ],
-      "zone_id": "zone_4",
-      "inverter_id": "inv_4"
-    },
-    {
-      "panel_id": "pva_101",
-      "grid_coord": [
-        59,
+        52,
         21
       ],
       "cut_spec": [
@@ -1501,10 +1475,10 @@
       "inverter_id": "inv_4"
     },
     {
-      "panel_id": "pva_53",
+      "panel_id": "pva_3",
       "grid_coord": [
-        57,
-        21
+        52,
+        13
       ],
       "cut_spec": [
         2.0,
@@ -1514,9 +1488,9 @@
       "inverter_id": "inv_4"
     },
     {
-      "panel_id": "pva_68",
+      "panel_id": "pva_1",
       "grid_coord": [
-        57,
+        52,
         19
       ],
       "cut_spec": [
@@ -1527,10 +1501,10 @@
       "inverter_id": "inv_4"
     },
     {
-      "panel_id": "pva_50",
+      "panel_id": "pva_23",
       "grid_coord": [
-        57,
-        15
+        54,
+        17
       ],
       "cut_spec": [
         2.0,
@@ -1553,9 +1527,22 @@
       "inverter_id": "inv_4"
     },
     {
-      "panel_id": "pva_51",
+      "panel_id": "pva_4",
       "grid_coord": [
-        57,
+        52,
+        15
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_4",
+      "inverter_id": "inv_4"
+    },
+    {
+      "panel_id": "pva_5",
+      "grid_coord": [
+        52,
         17
       ],
       "cut_spec": [
@@ -1566,9 +1553,22 @@
       "inverter_id": "inv_4"
     },
     {
-      "panel_id": "pva_100",
+      "panel_id": "pva_22",
       "grid_coord": [
-        59,
+        54,
+        15
+      ],
+      "cut_spec": [
+        2.0,
+        3.0
+      ],
+      "zone_id": "zone_4",
+      "inverter_id": "inv_4"
+    },
+    {
+      "panel_id": "pva_6",
+      "grid_coord": [
+        52,
         19
       ],
       "cut_spec": [
@@ -1579,10 +1579,10 @@
       "inverter_id": "inv_4"
     },
     {
-      "panel_id": "pva_86",
+      "panel_id": "pva_33",
       "grid_coord": [
-        58,
-        24
+        55,
+        17
       ],
       "cut_spec": [
         2.0,
@@ -1592,9 +1592,9 @@
       "inverter_id": "inv_4"
     },
     {
-      "panel_id": "pva_52",
+      "panel_id": "pva_15",
       "grid_coord": [
-        57,
+        53,
         19
       ],
       "cut_spec": [
@@ -1605,10 +1605,10 @@
       "inverter_id": "inv_4"
     },
     {
-      "panel_id": "pva_84",
+      "panel_id": "pva_12",
       "grid_coord": [
-        58,
-        19
+        53,
+        13
       ],
       "cut_spec": [
         2.0,
@@ -1622,23 +1622,23 @@
     {
       "zone_id": "zone_0",
       "inverter_id": "inv_0",
+      "pva_count": 20,
+      "perimeter": 66.0,
+      "total_power": 24.0
+    },
+    {
+      "zone_id": "zone_1",
+      "inverter_id": "inv_1",
       "pva_count": 22,
       "perimeter": 66.0,
       "total_power": 26.4
     },
     {
-      "zone_id": "zone_1",
-      "inverter_id": "inv_1",
+      "zone_id": "zone_2",
+      "inverter_id": "inv_2",
       "pva_count": 21,
       "perimeter": 62.0,
       "total_power": 25.2
-    },
-    {
-      "zone_id": "zone_2",
-      "inverter_id": "inv_2",
-      "pva_count": 22,
-      "perimeter": 62.0,
-      "total_power": 26.4
     },
     {
       "zone_id": "zone_3",
@@ -1650,9 +1650,9 @@
     {
       "zone_id": "zone_4",
       "inverter_id": "inv_4",
-      "pva_count": 21,
+      "pva_count": 23,
       "perimeter": 64.0,
-      "total_power": 25.2
+      "total_power": 27.6
     }
   ],
   "constraint_satisfaction": {

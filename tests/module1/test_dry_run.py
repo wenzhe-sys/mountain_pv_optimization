@@ -2,7 +2,7 @@
 """最小端到端 dry run 测试：验证训练 pipeline 全链路可用 + 速度。"""
 import sys, os, time
 os.environ["PYTHONUNBUFFERED"] = "1"
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from algorithm.dqn_agent import DQNPartitionAgent
 from utils.load_instance import InstanceLoader

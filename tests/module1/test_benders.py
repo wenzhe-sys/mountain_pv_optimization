@@ -4,7 +4,7 @@ import unittest
 import sys
 import os
 import json
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from algorithm.benders_decomposition import BendersDecomposition
 
@@ -15,7 +15,7 @@ class TestBendersDecomposition(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """加载算例 r1"""
-        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         path = os.path.join(project_root, "data", "processed", "PV",
                             "public", "easy", "public_easy_r1.json")
         if os.path.exists(path):

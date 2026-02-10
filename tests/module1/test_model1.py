@@ -15,7 +15,7 @@ import unittest
 import sys
 import os
 import json
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from model.model_cutting_partition import CuttingPartitionModel, validate_m1_output
 from utils.load_instance import InstanceLoader
@@ -27,7 +27,7 @@ class TestModel1EndToEnd(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """加载并运行模块一"""
-        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         cls.instance_path = os.path.join(
             project_root, "data", "processed", "PV", "public", "easy", "public_easy_r1.json"
         )
