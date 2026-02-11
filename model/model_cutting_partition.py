@@ -23,13 +23,17 @@ class CuttingPartitionModel:
     def __init__(self, instance_path: str):
         """加载算例并初始化模型"""
         self.instance_path = instance_path
-        self.instance_data = self.load_instance()
+        self.instance_data = self._load_instance(instance_path)
         self.benders_solver = BendersDecomposition(self.instance_data)
         # 使用相对路径构建结果保存路径
         current_dir = os.path.dirname(os.path.abspath(__file__))
         project_root = os.path.dirname(current_dir)  # 上两级目录（model目录的父目录）
         self.results_path = os.path.join(project_root, "data", "results", "module1")
         os.makedirs(self.results_path, exist_ok=True)
+        # 初始化默认的分区求解器
+        self.partition_solver = "heuristic"
+        # 从实例数据中提取实例ID
+        self.instance_id = self.instance_data["instance_info"]["instance_id"]
 
     def _load_instance(self, path: str) -> Dict:
         """加载算例 JSON 文件。"""

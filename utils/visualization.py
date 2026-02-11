@@ -31,8 +31,8 @@ class ResultVisualizer:
         plt.rcParams["axes.unicode_minus"] = False  # 解决负号显示问题
 
     def plot_partition(self, module1_output: Dict, instance_id: str):
-        """可视化模块一：面板分区结果"""
-        fig, ax = plt.subplots(figsize=(10, 8))
+        """可视化模块一：面板分区结果（增强版）"""
+        fig, ax = plt.subplots(figsize=(12, 10))
         zones = module1_output["zone_summary"]
         colors = plt.cm.Set3(np.linspace(0, 1, len(zones)))
         
@@ -41,6 +41,12 @@ class ResultVisualizer:
             x = [p["grid_coord"][1] for p in zone_pva]
             y = [p["grid_coord"][0] for p in zone_pva]
             ax.scatter(x, y, c=[colors[idx]], label=f"分区{idx+1}（{zone['pva_count']}块）", s=50)
+            
+            # 优化：添加逆变器位置标记
+            # 计算逆变器位置（分区中心）
+            inv_x = np.mean([p["grid_coord"][1] for p in zone_pva])
+            inv_y = np.mean([p["grid_coord"][0] for p in zone_pva])
+            ax.scatter(inv_x, inv_y, c="red", marker="^", s=200, label=f"逆变器{idx+1}")
         
         ax.set_xlabel("网格列坐标")
         ax.set_ylabel("网格行坐标")

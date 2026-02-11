@@ -28,11 +28,20 @@ class BranchAndPrice:
         
         # 从模块一输出动态计算逆变器坐标
         self.inverter_coords = []
+        
+        # 调试信息：打印模块一输出的基本信息
+        print(f"DEBUG: module1_output keys: {list(module1_output.keys())}")
+        print(f"DEBUG: zone_summary length: {len(self.zone_summary)}")
+        print(f"DEBUG: partition_result length: {len(module1_output['partition_result'])}")
+        
+        self.inverter_coords = []
         for zone in self.zone_summary:
             # 计算该分区内面板的中心坐标作为逆变器位置
             zone_id = zone["zone_id"]
             # 从module1_output中查找该分区的所有面板
             zone_panels = [panel for panel in module1_output["partition_result"] if panel["zone_id"] == zone_id]
+            print(f"DEBUG: Zone {zone_id} has {len(zone_panels)} panels")
+            
             if zone_panels:
                 # 计算面板坐标的平均值作为逆变器位置
                 avg_x = sum(panel["grid_coord"][0] for panel in zone_panels) / len(zone_panels)
@@ -40,9 +49,17 @@ class BranchAndPrice:
                 # 对齐到网格
                 aligned_coord = self._align_to_grid((avg_x, avg_y))
                 self.inverter_coords.append(aligned_coord)
+                print(f"DEBUG: Zone {zone_id} inverter coordinate: {aligned_coord}")
             else:
                 # 如果没有面板数据，使用默认对齐网格的坐标
-                self.inverter_coords.append((35.0 + len(self.inverter_coords) * 5, 35.0 + len(self.inverter_coords) * 5))
+                default_coord = (35.0 + len(self.inverter_coords) * 5, 35.0 + len(self.inverter_coords) * 5)
+                self.inverter_coords.append(default_coord)
+                print(f"DEBUG: Zone {zone_id} using default coordinate: {default_coord}")
+        
+        # 确保至少有一个逆变器坐标
+        if not self.inverter_coords:
+            self.inverter_coords.append((35.0, 35.0))
+            print(f"DEBUG: No inverter coordinates found, using fallback: (35.0, 35.0)")
         
         self.substation_coord = instance_data["equipment_params"]["substation"]["coord"]
         
@@ -74,29 +91,108 @@ class BranchAndPrice:
         
         # 1. 逆变器聚类（按距离分组，减少路径数量）
         inverter_coords_np = np.array(self.inverter_coords)
-        n_boxes = max(1, int(np.ceil(self.n_inverters / 10)))  # 箱变数量（3200kVA为主）
-        self.kmeans = KMeans(n_clusters=n_boxes, random_state=42)  # 保存为实例变量
-        clusters = self.kmeans.fit_predict(inverter_coords_np)
+        
+        # 优化：计算箱变数量，每台3200kVA最多连接10台逆变器
+        n_boxes = max(1, int(np.ceil(self.n_inverters / 10)))
+        
+        # 优化：使用DBSCAN聚类避免坐标重合
+        from sklearn.cluster import DBSCAN
+        from sklearn.preprocessing import StandardScaler
+        
+        try:
+            # 使用DBSCAN进行密度聚类
+            scaler = StandardScaler()
+            scaled_coords = scaler.fit_transform(inverter_coords_np)
+            
+            # 设置DBSCAN参数，eps表示邻域半径，min_samples表示最小样本数
+            dbscan = DBSCAN(eps=0.3, min_samples=1, metric='euclidean')
+            clusters = dbscan.fit_predict(scaled_coords)
+            
+            # 计算实际聚类数量
+            actual_clusters = len(set(clusters))
+            
+            if actual_clusters > n_boxes:
+                # 如果聚类数量过多，使用KMeans进行调整
+                self.kmeans = KMeans(n_clusters=n_boxes, random_state=42, init='k-means++')
+                clusters = self.kmeans.fit_predict(inverter_coords_np)
+            else:
+                # 使用KMeans但限制聚类中心的最小距离
+                self.kmeans = KMeans(n_clusters=actual_clusters, random_state=42, init='k-means++')
+                clusters = self.kmeans.fit_predict(inverter_coords_np)
+                
+                # 检查并调整聚类中心距离
+                centers = self.kmeans.cluster_centers_
+                for i in range(len(centers)):
+                    for j in range(i+1, len(centers)):
+                        distance = np.linalg.norm(centers[i] - centers[j])
+                        if distance < self.grid_size:
+                            # 如果距离过近，调整其中一个中心
+                            direction = centers[i] - centers[j]
+                            if np.linalg.norm(direction) > 0:
+                                direction = direction / np.linalg.norm(direction)
+                                centers[i] += direction * self.grid_size
+                
+                # 更新聚类中心
+                self.kmeans.cluster_centers_ = centers
+                # 重新计算聚类
+                clusters = self.kmeans.predict(inverter_coords_np)
+        except Exception as e:
+            logging.error(f"DBSCAN聚类失败，使用KMeans：{str(e)}")
+            # 退回到KMeans
+            self.kmeans = KMeans(n_clusters=n_boxes, random_state=42, init='k-means++')
+            clusters = self.kmeans.fit_predict(inverter_coords_np)
         
         # 2. 生成路径（聚类中心→升压站）+ 坐标对齐
         paths = []
         self.aligned_box_coords.clear()  # 清空历史坐标
+        
+        # 优化：路径预筛选，删除明显不合理的路径
+        valid_clusters = []
         for cluster in range(n_boxes):
+            cluster_inverters = np.where(clusters == cluster)[0]
+            if len(cluster_inverters) > 0:  # 只处理有逆变器的聚类
+                valid_clusters.append(cluster)
+        
+        for cluster in valid_clusters:
             cluster_inverters = np.where(clusters == cluster)[0]
             # 聚类中心（原始坐标）→ 网格对齐后的坐标
             raw_box_coord = self.kmeans.cluster_centers_[cluster]
             aligned_box_coord = self._align_to_grid(raw_box_coord)
-            self.aligned_box_coords.append(aligned_box_coord)  # 保存对齐后的坐标
             
-            # 路径：逆变器→箱变→升压站
-            cluster_path = []
-            for inv in cluster_inverters:
-                inv_coord = self.inverter_coords[inv]
-                # 逆变器到箱变路径（u=逆变器索引，v=箱变索引）
-                cluster_path.append((inv, self.n_inverters + cluster))
-            # 箱变到升压站路径（u=箱变索引，v=升压站索引）
-            cluster_path.append((self.n_inverters + cluster, self.n_inverters + n_boxes))
-            paths.append(cluster_path)
+            # 优化：检查是否与已存在的箱变坐标过近
+            duplicate = False
+            for existing_coord in self.aligned_box_coords:
+                distance = np.sqrt((aligned_box_coord[0] - existing_coord[0])**2 + 
+                                  (aligned_box_coord[1] - existing_coord[1])**2)
+                if distance < self.grid_size:  # 如果距离小于网格尺寸，视为重复
+                    duplicate = True
+                    break
+            
+            if not duplicate:
+                self.aligned_box_coords.append(aligned_box_coord)  # 保存对齐后的坐标
+                
+                # 路径：逆变器→箱变→升压站
+                cluster_path = []
+                for inv in cluster_inverters:
+                    inv_coord = self.inverter_coords[inv]
+                    # 逆变器到箱变路径（u=逆变器索引，v=箱变索引）
+                    cluster_path.append((inv, self.n_inverters + cluster))
+                # 箱变到升压站路径（u=箱变索引，v=升压站索引）
+                cluster_path.append((self.n_inverters + cluster, self.n_inverters + n_boxes))
+                paths.append(cluster_path)
+            else:
+                # 优化：如果箱变坐标重复，将逆变器分配到最近的已有箱变
+                nearest_box = min(range(len(self.aligned_box_coords)), 
+                                key=lambda i: np.sqrt((aligned_box_coord[0] - self.aligned_box_coords[i][0])**2 + 
+                                                    (aligned_box_coord[1] - self.aligned_box_coords[i][1])**2))
+                
+                # 路径：逆变器→最近的已有箱变→升压站
+                cluster_path = []
+                for inv in cluster_inverters:
+                    inv_coord = self.inverter_coords[inv]
+                    # 逆变器到箱变路径（u=逆变器索引，v=箱变索引）
+                    cluster_path.append((inv, self.n_inverters + nearest_box))
+                paths.append(cluster_path)
         
         logging.info(f"【分支定价-列生成】生成 {len(paths)} 条路径（聚类数：{n_boxes}）")
         logging.info(f"【坐标对齐】箱变原始坐标→对齐后坐标：{list(zip(self.kmeans.cluster_centers_, self.aligned_box_coords))}")

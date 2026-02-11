@@ -121,7 +121,7 @@ class GreedyPartitioner:
             for n in nodes
         ], dtype=float)
 
-        # 简易 K-means 初始化
+        # 简易 K-means 初始化 - 使用随机种子确保多样性
         from sklearn.cluster import KMeans
         kmeans = KMeans(n_clusters=self.n_zones, random_state=self._seed, n_init=10)
         kmeans.fit(coords)
