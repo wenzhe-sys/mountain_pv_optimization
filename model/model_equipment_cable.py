@@ -4,22 +4,43 @@ from typing import Dict
 from algorithm.branch_and_price import BranchAndPrice
 
 class EquipmentCableModel:
-    def __init__(self, instance_path: str, module1_output_path: str):
+    def __init__(self, instance_path: str, module1_output_path: str = None, module1_output: Dict = None):
         """加载算例和模块一输出，初始化模型（修正属性赋值顺序）"""
         self.instance_path = instance_path
         self.module1_output_path = module1_output_path
         
-        # 步骤1：先加载算例和模块一输出（依赖优先）
+        # 步骤1：先加载算例
         self.instance_data = self.load_instance()
-        self.module1_output = self.load_module1_output()
         
-        # 步骤2：提取逆变器ID（在加载module1_output之后）
+        # 步骤2：加载或接收模块一输出
+        if module1_output is not None:
+            # 直接接收模块一输出
+            self.module1_output = module1_output
+            # 接口校验（对应错误码E101-E104）
+            if "instance_id" not in module1_output:
+                raise ValueError("模块一输出缺失instance_id，错误码E101")
+            if not all(18 <= zone["pva_count"] <= 26 for zone in module1_output["zone_summary"]):
+                raise ValueError("分区面板数超出18-26范围，错误码E103")
+            if len(set([zone["inverter_id"] for zone in module1_output["zone_summary"]])) != len(module1_output["zone_summary"]):
+                raise ValueError("逆变器ID重复，错误码E104")
+            
+            # 输出加载信息
+            inverter_count = len(module1_output["zone_summary"])
+            print(f"【模块二】成功接收模块一结果：{module1_output['instance_id']}（分区数：{len(module1_output['zone_summary'])}，逆变器数：{inverter_count}）")
+        elif module1_output_path is not None:
+            # 从文件加载模块一输出
+            self.module1_output = self.load_module1_output()
+        else:
+            # 两者都未提供
+            raise ValueError("必须提供module1_output_path或module1_output参数，错误码E206")
+        
+        # 步骤3：提取逆变器ID
         self.inverter_ids = [zone["inverter_id"] for zone in self.module1_output["zone_summary"]]
         
-        # 步骤3：初始化分支定价求解器（依赖instance_data和module1_output）
+        # 步骤4：初始化分支定价求解器
         self.bap_solver = BranchAndPrice(self.instance_data, self.module1_output)
         
-        # 步骤4：其他属性初始化
+        # 步骤5：其他属性初始化
         # 使用相对路径构建结果保存路径
         current_dir = os.path.dirname(os.path.abspath(__file__))
         project_root = os.path.dirname(current_dir)  # 上两级目录（model目录的父目录）
@@ -80,8 +101,14 @@ class EquipmentCableModel:
                 if inv_id not in self.inverter_ids:
                     raise ValueError(f"箱变连接无效逆变器ID：{inv_id}，错误码E204")
 
-    def run(self) -> Dict:
+    def run(self, module1_output: Dict = None) -> Dict:
         """运行模块二：设备选型+电缆共沟优化，输出符合M2-Output规范的结果"""
+        # 支持在运行时更新module1_output
+        if module1_output is not None:
+            self.module1_output = module1_output
+            self.inverter_ids = [zone["inverter_id"] for zone in self.module1_output["zone_summary"]]
+            self.bap_solver = BranchAndPrice(self.instance_data, self.module1_output)
+        
         print(f"【模块二】开始电气设备选型及电缆共沟优化（算例ID：{self.instance_data['instance_info']['instance_id']}）")
         
         # 1. 调用分支定价算法求解（融合K-means列管理）

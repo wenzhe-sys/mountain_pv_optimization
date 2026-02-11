@@ -35,7 +35,7 @@ def main(instance_id: str = "r1"):
     print("\n【步骤4/6】运行模块二：电气设备选型及电缆共沟...")
     project_root = os.path.dirname(os.path.abspath(__file__))
     module1_output_path = os.path.join(project_root, "data", "results", "module1", f"M1-Output_{instance_id}.json")
-    model2 = EquipmentCableModel(processed_instance_path, module1_output_path)
+    model2 = EquipmentCableModel(processed_instance_path, module1_output_path, module1_output)
     module2_output = model2.run()
 
     # 步骤5：运行模块三（集成优化）
@@ -67,4 +67,4 @@ def main(instance_id: str = "r1"):
 
 if __name__ == "__main__":
     # 支持指定算例ID运行（如r1、r2...r17）
-    main(instance_id="r1")
+    main(instance_id="r2")
