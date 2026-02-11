@@ -118,9 +118,9 @@ class GreedyPartitioner:
             for n in nodes
         ], dtype=float)
 
-        # 简易 K-means 初始化
+        # 简易 K-means 初始化 - 使用随机种子确保多样性
         from sklearn.cluster import KMeans
-        kmeans = KMeans(n_clusters=self.n_zones, random_state=42, n_init=10)
+        kmeans = KMeans(n_clusters=self.n_zones, random_state=None, n_init=10)
         kmeans.fit(coords)
 
         seeds = []
