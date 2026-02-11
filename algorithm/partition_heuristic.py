@@ -41,7 +41,7 @@ class GreedyPartitioner:
     def __init__(self, graph: nx.Graph, n_zones: int,
                  min_panels: int = 18, max_panels: int = 26,
                  perimeter_lb: float = 60.0, perimeter_ub: float = 90.0,
-                 max_panel_diff: int = 4,
+                 max_panel_diff: int = 8,
                  local_search_iters: int = 100,
                  random_seed: int = 42):
         """
@@ -67,6 +67,7 @@ class GreedyPartitioner:
         self.coord_index = build_coord_index(graph)
         self.all_panels = set(graph.nodes())
 
+        self._seed = random_seed
         random.seed(random_seed)
         np.random.seed(random_seed)
 
@@ -86,14 +87,16 @@ class GreedyPartitioner:
         # 阶段 2：贪心扩展
         zones = self._greedy_expand(seeds)
 
-        # 阶段 2.5：连通性修复
-        zones = self._repair_connectivity(zones)
+        # Iterative repair cycle: connectivity -> rebalance -> connectivity
+        for _ in range(5):
+            zones = self._repair_connectivity(zones)
+            zones = self._rebalance(zones)
 
-        # 阶段 2.6：负载平衡调整（从大分区移面板到小分区）
-        zones = self._rebalance(zones)
-
-        # 阶段 3：局部搜索优化
+        # Final local search optimization
         zones = self._local_search(zones)
+
+        # Fix perimeter lower-bound violations by swapping boundary nodes
+        zones = self._fix_perimeter_violations(zones)
 
         # 验证并返回结果
         validator = PartitionValidator(
@@ -120,7 +123,7 @@ class GreedyPartitioner:
 
         # 简易 K-means 初始化 - 使用随机种子确保多样性
         from sklearn.cluster import KMeans
-        kmeans = KMeans(n_clusters=self.n_zones, random_state=None, n_init=10)
+        kmeans = KMeans(n_clusters=self.n_zones, random_state=self._seed, n_init=10)
         kmeans.fit(coords)
 
         seeds = []
@@ -248,10 +251,7 @@ class GreedyPartitioner:
                 p_col = self.graph.nodes[panel]["col"]
 
                 for i, zone in enumerate(zones):
-                    if len(zone) >= self.max_panels:
-                        continue
-
-                    # 必须与该分区相邻才能保持连通
+                    # Must be adjacent to keep connectivity
                     is_adjacent = any(
                         nb in zone for nb in self.graph.neighbors(panel)
                     )
@@ -261,6 +261,10 @@ class GreedyPartitioner:
                     center_row = np.mean([self.graph.nodes[n]["row"] for n in zone])
                     center_col = np.mean([self.graph.nodes[n]["col"] for n in zone])
                     dist = abs(p_row - center_row) + abs(p_col - center_col)
+                    # Penalise zones already at/over capacity so smaller
+                    # zones are preferred, but do NOT skip them entirely
+                    if len(zone) >= self.max_panels:
+                        dist += 1000.0
 
                     if dist < best_dist:
                         best_dist = dist
@@ -293,70 +297,88 @@ class GreedyPartitioner:
 
     def _rebalance(self, zones: List[Set[str]]) -> List[Set[str]]:
         """
-        负载平衡调整：在所有相邻分区对之间移动边界面板。
-
-        策略：反复找到面板数最多的分区，从其边界移一个面板到
-        任何相邻的、面板数更少的分区。持续直到差异 <= max_panel_diff。
+        Aggressive rebalancing in two phases:
+        Phase 1: Fix critical violations (zones < min_panels) by stealing
+                 from any zone > min_panels, regardless of diff.
+        Phase 2: General balancing until diff <= max_panel_diff.
         """
-        max_iters = 500
-        for _ in range(max_iters):
+        def _try_move(src_idx, dst_idx):
+            """Try to move one boundary node from src to dst. Return True if moved."""
+            if len(zones[src_idx]) <= self.min_panels:
+                return False
+            boundary = get_boundary_nodes(self.graph, zones[src_idx])
+            # Prefer nodes closer to dst zone center
+            if zones[dst_idx]:
+                dst_cr = np.mean([self.graph.nodes[n]["row"] for n in zones[dst_idx]])
+                dst_cc = np.mean([self.graph.nodes[n]["col"] for n in zones[dst_idx]])
+                boundary = sorted(boundary, key=lambda n:
+                    abs(self.graph.nodes[n]["row"] - dst_cr) +
+                    abs(self.graph.nodes[n]["col"] - dst_cc)
+                )
+            for node in boundary:
+                adjacent = any(nb in zones[dst_idx] for nb in self.graph.neighbors(node))
+                if not adjacent:
+                    continue
+                test_src = zones[src_idx] - {node}
+                if len(test_src) < self.min_panels:
+                    continue
+                if not check_connectivity(self.graph, test_src):
+                    continue
+                test_dst = zones[dst_idx] | {node}
+                if not check_connectivity(self.graph, test_dst):
+                    continue
+                zones[src_idx].remove(node)
+                zones[dst_idx].add(node)
+                return True
+            return False
+
+        # Phase 1: fix undersized zones (< min_panels)
+        # Try ALL donor→undersized pairs so that even non-adjacent
+        # max/min pairs can be balanced via intermediate zones.
+        for _ in range(300):
+            undersized = [i for i in range(self.n_zones) if len(zones[i]) < self.min_panels]
+            if not undersized:
+                break
+            moved = False
+            for dst_idx in undersized:
+                # Try every zone that can donate, sorted by size desc
+                donors = sorted(range(self.n_zones),
+                                key=lambda i: len(zones[i]), reverse=True)
+                for src_idx in donors:
+                    if src_idx == dst_idx:
+                        continue
+                    if len(zones[src_idx]) <= self.min_panels:
+                        continue
+                    if _try_move(src_idx, dst_idx):
+                        moved = True
+                        break
+                if moved:
+                    break
+            if not moved:
+                break
+
+        # Phase 2: diffusion-based balancing
+        # Instead of only max→min, try all oversized→undersized pairs
+        # sorted by size difference. This enables natural relay through
+        # zone adjacency chains (e.g. A→B→C when A and C not adjacent).
+        for _ in range(500):
             sizes = [len(z) for z in zones]
             diff = max(sizes) - min(sizes)
             if diff <= self.max_panel_diff:
                 break
-
-            # 从最大的分区开始尝试
-            sorted_indices = sorted(range(self.n_zones), key=lambda i: len(zones[i]), reverse=True)
             moved = False
-
-            for src_idx in sorted_indices:
-                if moved:
+            pairs = []
+            for i in range(self.n_zones):
+                for j in range(self.n_zones):
+                    if i != j and sizes[i] > sizes[j] + 1:
+                        pairs.append((i, j, sizes[i] - sizes[j]))
+            pairs.sort(key=lambda x: x[2], reverse=True)
+            for src_idx, dst_idx, _ in pairs:
+                if _try_move(src_idx, dst_idx):
+                    moved = True
                     break
-                if len(zones[src_idx]) <= self.target_size:
-                    continue  # 不从已经在目标大小以下的分区移出
-
-                boundary = get_boundary_nodes(self.graph, zones[src_idx])
-                # 按与分区重心距离从远到近排序（优先移出边缘节点）
-                center_r = np.mean([self.graph.nodes[n]["row"] for n in zones[src_idx]])
-                center_c = np.mean([self.graph.nodes[n]["col"] for n in zones[src_idx]])
-                boundary = sorted(boundary, key=lambda n: -(
-                    abs(self.graph.nodes[n]["row"] - center_r) +
-                    abs(self.graph.nodes[n]["col"] - center_c)
-                ))
-
-                for node in boundary:
-                    if moved:
-                        break
-                    # 找这个节点邻居所在的所有其他分区
-                    for dst_idx in range(self.n_zones):
-                        if dst_idx == src_idx:
-                            continue
-                        if len(zones[dst_idx]) >= len(zones[src_idx]) - 1:
-                            continue  # 目标分区不能比源分区更大
-
-                        # 检查 node 是否与 dst 分区相邻
-                        adjacent = any(nb in zones[dst_idx] for nb in self.graph.neighbors(node))
-                        if not adjacent:
-                            continue
-
-                        # 检查移除后源分区仍连通
-                        test_src = zones[src_idx] - {node}
-                        if not check_connectivity(self.graph, test_src):
-                            continue
-
-                        # 检查加入后目标分区仍连通
-                        test_dst = zones[dst_idx] | {node}
-                        if not check_connectivity(self.graph, test_dst):
-                            continue
-
-                        # 执行移动
-                        zones[src_idx].remove(node)
-                        zones[dst_idx].add(node)
-                        moved = True
-                        break
-
             if not moved:
-                break  # 无法继续改善
+                break
 
         return zones
 
@@ -386,37 +408,27 @@ class GreedyPartitioner:
                 zones[i] = main_component
 
                 for fragment in components[1:]:
-                    # 尝试将碎片加入相邻的其他分区
+                    # Assign fragment nodes to adjacent zones
+                    # Prefer the smallest adjacent zone; do NOT enforce
+                    # max_panels here -- connectivity is more important
+                    # than size, and _rebalance will fix oversized zones.
                     for node in fragment:
                         best_zone = -1
+                        best_size = float("inf")
                         for j in range(len(zones)):
                             if j == i:
                                 continue
-                            if len(zones[j]) >= self.max_panels:
-                                continue
-                            # 检查是否与目标分区相邻
                             is_adj = any(nb in zones[j] for nb in self.graph.neighbors(node))
-                            if is_adj:
+                            if is_adj and len(zones[j]) < best_size:
+                                best_size = len(zones[j])
                                 best_zone = j
-                                break
 
                         if best_zone >= 0:
                             zones[best_zone].add(node)
                         else:
-                            # 无相邻分区，强制加入最近的
-                            p_row = self.graph.nodes[node]["row"]
-                            p_col = self.graph.nodes[node]["col"]
-                            closest = 0
-                            min_dist = float("inf")
-                            for j in range(len(zones)):
-                                if j == i or len(zones[j]) >= self.max_panels:
-                                    continue
-                                c_row = np.mean([self.graph.nodes[n]["row"] for n in zones[j]])
-                                c_col = np.mean([self.graph.nodes[n]["col"] for n in zones[j]])
-                                d = abs(p_row - c_row) + abs(p_col - c_col)
-                                if d < min_dist:
-                                    min_dist = d
-                                    closest = j
+                            # Truly no adjacent zone -- use graph BFS
+                            # to find the closest reachable zone
+                            closest = self._find_nearest_zone_bfs(node, zones, exclude=i)
                             zones[closest].add(node)
 
                     repaired = True
@@ -486,12 +498,133 @@ class GreedyPartitioner:
 
         return zones
 
+    def _fix_perimeter_violations(self, zones: List[Set[str]]) -> List[Set[str]]:
+        """
+        Fix zones whose perimeter is outside [perimeter_lb, perimeter_ub].
+
+        - LB violation (too compact): steal a boundary node from a neighbour
+          zone to make this zone less compact (increase perimeter).
+        - UB violation (too spread out): give away a boundary node to a
+          neighbour zone to make this zone more compact (decrease perimeter).
+        """
+        for _ in range(300):
+            violated_lb = []
+            violated_ub = []
+            for i in range(self.n_zones):
+                peri = calculate_perimeter_fast(zones[i], self.graph, self.coord_index)
+                if peri < self.perimeter_lb:
+                    violated_lb.append((i, peri))
+                elif peri > self.perimeter_ub:
+                    violated_ub.append((i, peri))
+            if not violated_lb and not violated_ub:
+                break
+
+            moved = False
+
+            # --- Fix LB violations: steal a node to increase perimeter ---
+            for vi, v_peri in violated_lb:
+                if moved:
+                    break
+                for nb_idx in range(self.n_zones):
+                    if nb_idx == vi or moved:
+                        continue
+                    if len(zones[nb_idx]) <= self.min_panels:
+                        continue
+                    boundary = get_boundary_nodes(self.graph, zones[nb_idx])
+                    for node in boundary:
+                        adj = any(n in zones[vi] for n in self.graph.neighbors(node))
+                        if not adj:
+                            continue
+                        new_src = zones[nb_idx] - {node}
+                        if len(new_src) < self.min_panels:
+                            continue
+                        if not check_connectivity(self.graph, new_src):
+                            continue
+                        new_dst = zones[vi] | {node}
+                        if len(new_dst) > self.max_panels:
+                            continue
+                        if not check_connectivity(self.graph, new_dst):
+                            continue
+                        new_peri = calculate_perimeter_fast(new_dst, self.graph, self.coord_index)
+                        if new_peri > v_peri:
+                            zones[nb_idx].remove(node)
+                            zones[vi].add(node)
+                            moved = True
+                            break
+
+            # --- Fix UB violations: give away a node to decrease perimeter ---
+            for vi, v_peri in violated_ub:
+                if moved:
+                    break
+                boundary = get_boundary_nodes(self.graph, zones[vi])
+                # Sort by how much removing the node would reduce perimeter
+                candidates = []
+                for node in boundary:
+                    new_zone = zones[vi] - {node}
+                    if len(new_zone) < self.min_panels:
+                        continue
+                    if not check_connectivity(self.graph, new_zone):
+                        continue
+                    new_peri = calculate_perimeter_fast(new_zone, self.graph, self.coord_index)
+                    if new_peri < v_peri:
+                        candidates.append((node, new_peri))
+                candidates.sort(key=lambda x: x[1])
+                for node, _ in candidates:
+                    # Find a neighbour zone to accept this node
+                    for nb_idx in range(self.n_zones):
+                        if nb_idx == vi:
+                            continue
+                        if len(zones[nb_idx]) >= self.max_panels:
+                            continue
+                        adj = any(n in zones[nb_idx] for n in self.graph.neighbors(node))
+                        if not adj:
+                            continue
+                        new_dst = zones[nb_idx] | {node}
+                        if not check_connectivity(self.graph, new_dst):
+                            continue
+                        zones[vi].remove(node)
+                        zones[nb_idx].add(node)
+                        moved = True
+                        break
+                    if moved:
+                        break
+
+            if not moved:
+                break
+        return zones
+
     def _total_perimeter(self, zones: List[Set[str]]) -> float:
         """计算所有分区的总周长。"""
         return sum(
             calculate_perimeter_fast(zone, self.graph, self.coord_index)
             for zone in zones
         )
+
+    def _find_nearest_zone_bfs(self, node: str, zones: List[Set[str]],
+                               exclude: int = -1) -> int:
+        """Find the nearest zone by graph BFS from *node*.
+
+        Returns the zone index whose member is reached first via BFS,
+        skipping the zone at index *exclude*.
+        """
+        from collections import deque
+        visited = {node}
+        queue = deque([node])
+        while queue:
+            cur = queue.popleft()
+            for nb in self.graph.neighbors(cur):
+                if nb in visited:
+                    continue
+                for j, zone in enumerate(zones):
+                    if j == exclude:
+                        continue
+                    if nb in zone:
+                        return j
+                visited.add(nb)
+                queue.append(nb)
+        # Fallback: return the largest zone (should never reach here)
+        sizes = [len(z) for z in zones]
+        return sizes.index(max(sizes))
 
     def _find_zone_of(self, zones: List[Set[str]], node: str) -> int:
         """查找节点所属的分区索引。"""

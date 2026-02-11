@@ -366,22 +366,14 @@ class BendersDecomposition:
 
         # 多种子尝试：每次迭代尝试多个种子，选最优
         best_result = None
-        # 对 r2 实例特殊处理：增加种子数量并放宽约束
-        if self.instance_id == "r2":
-            n_seeds = 20  # 增加到20个种子
-            min_panels = 17  # 放宽最小面板数约束
-            local_search_iters = 300  # 增加局部搜索迭代次数
-        else:
-            min_panels = 18
-            local_search_iters = 200
-        seeds = [iteration * 10 + s for s in range(n_seeds)]  # 每次迭代 n_seeds 个种子
+        seeds = [iteration * 20 + s for s in range(20)]  # 每次迭代 20 个种子
 
         for seed in seeds:
             partitioner = GreedyPartitioner(
                 self.graph, n_zones=self.p,
                 min_panels=min_panels, max_panels=26,
                 perimeter_lb=self.LB, perimeter_ub=self.UB_perimeter,
-                local_search_iters=local_search_iters,
+                local_search_iters=500,
                 random_seed=seed
             )
             result = partitioner.solve()
@@ -589,9 +581,9 @@ class BendersDecomposition:
                   f"总周长: {best_result.total_perimeter:.1f}m")
             print(f"  各分区面板数: {panel_counts}")
             if best_result.violations:
-                print(f"  ⚠ 约束违规: {len(best_result.violations)} 条")
+                print(f"  [!] 约束违规: {len(best_result.violations)} 条")
             else:
-                print(f"  ✓ 所有约束满足")
+                print(f"  [OK] 所有约束满足")
         else:
             print(f"  求解完成 | 总耗时: {total_time:.1f}秒 | 未找到可行解")
         print("══════════════════════════════════════════════════════════")

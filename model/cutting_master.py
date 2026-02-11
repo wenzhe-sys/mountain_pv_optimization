@@ -181,7 +181,6 @@ class CuttingMasterProblem:
                 "material_id": f"mat_{m}",
                 "is_used": is_used,
                 "cuts": cuts,
-                "utilization": material_used_length / self.D if is_used else 0.0
             })
 
         # 需求满足情况
