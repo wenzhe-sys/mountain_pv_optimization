@@ -3,7 +3,7 @@
 import unittest
 import sys
 import os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils.graph_utils import (
     build_adjacency_graph, check_connectivity, calculate_perimeter_fast,

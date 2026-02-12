@@ -3,7 +3,7 @@
 import unittest
 import sys
 import os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils.graph_utils import build_adjacency_graph, build_coord_index
 from model.partition_sub import PartitionValidator
@@ -79,7 +79,7 @@ class TestGreedyPartitioner(unittest.TestCase):
     def setUp(self):
         # 使用真实算例 r1 的数据结构
         import json
-        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         instance_path = os.path.join(
             project_root, "data", "processed", "PV", "public", "easy", "public_easy_r1.json"
         )

@@ -49,8 +49,7 @@ class Structure2Vec(nn.Module):
         nn.init.xavier_uniform_(self.theta4)
 
     def forward(self, feat: torch.Tensor, adj: torch.Tensor,
-                edge_weight: torch.Tensor, embed: torch.Tensor,
-                degree: torch.Tensor = None) -> torch.Tensor:
+                edge_weight: torch.Tensor, embed: torch.Tensor) -> torch.Tensor:
         """
         单轮消息传递。
 
@@ -59,7 +58,6 @@ class Structure2Vec(nn.Module):
             adj: 邻接矩阵 [N, N]（0/1，可以是稀疏或密集）
             edge_weight: 边权重矩阵 [N, N]
             embed: 当前节点嵌入 [N, dim_embed]
-            degree: 预计算的度数向量 [N]（可选，用于 uniform edge weight 优化）
 
         Returns:
             更新后的节点嵌入 [N, dim_embed]
@@ -72,15 +70,15 @@ class Structure2Vec(nn.Module):
         term2 = torch.matmul(neighbor_sum, self.theta2)
 
         # theta3 * SUM(ReLU(theta4 * w_uv)):
-        if degree is not None:
-            # Optimized path: uniform edge weights (all 1.0)
-            # w_sum[i,k] = degree(i) * ReLU(theta4[0,k])  =>  O(N*d) instead of O(N^2*d)
-            relu_theta4 = F.relu(self.theta4)  # [1, dim_embed]
-            w_sum = degree.unsqueeze(1) * relu_theta4  # [N, dim_embed]
-        else:
-            # General path: non-uniform edge weights
-            w_transformed = F.relu(edge_weight.unsqueeze(-1) * self.theta4)  # [N, N, dim_embed]
-            w_sum = (adj.unsqueeze(-1) * w_transformed).sum(dim=1)  # [N, dim_embed]
+        # 对每个节点，聚合其邻居的边权重经 theta4 变换后的结果
+        # edge_weight [N, N] -> 每条边的权重
+        # 先对每条边的权重做 ReLU(theta4 * w)
+        # w_sum[v] = SUM_{u in N(v)} ReLU(theta4 * w(v,u))
+        # 简化：SUM_{u} adj[v,u] * ReLU(theta4 * edge_weight[v,u])
+        # 由于 edge_weight 通常全为 1，这简化为 degree(v) * ReLU(theta4)
+        # 但保持通用性：
+        w_transformed = F.relu(edge_weight.unsqueeze(-1) * self.theta4)  # [N, N, dim_embed]
+        w_sum = (adj.unsqueeze(-1) * w_transformed).sum(dim=1)  # [N, dim_embed]
         term3 = torch.matmul(w_sum, self.theta3)
 
         return F.relu(term1 + term2 + term3)
@@ -139,7 +137,7 @@ class QFunction(nn.Module):
 
 def encode_graph(s2v: Structure2Vec, feat: torch.Tensor,
                   adj: torch.Tensor, edge_weight: torch.Tensor,
-                  T: int = 4, degree: torch.Tensor = None) -> torch.Tensor:
+                  T: int = 4) -> torch.Tensor:
     """
     多轮 S2V 编码。
 
@@ -149,7 +147,6 @@ def encode_graph(s2v: Structure2Vec, feat: torch.Tensor,
         adj: 邻接矩阵 [N, N]
         edge_weight: 边权重矩阵 [N, N]
         T: 消息传递轮数
-        degree: 预计算的度数向量 [N]（可选，用于 uniform edge weight 优化）
 
     Returns:
         节点嵌入 [N, dim_embed]
@@ -158,7 +155,7 @@ def encode_graph(s2v: Structure2Vec, feat: torch.Tensor,
     embed = torch.zeros(N, s2v.dim_embed, device=feat.device)
 
     for _ in range(T):
-        embed = s2v(feat, adj, edge_weight, embed, degree=degree)
+        embed = s2v(feat, adj, edge_weight, embed)
 
     return embed
 

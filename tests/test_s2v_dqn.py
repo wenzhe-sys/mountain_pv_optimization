@@ -3,7 +3,7 @@
 import unittest
 import sys
 import os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import torch
 import numpy as np
@@ -142,8 +142,8 @@ class TestPartitionEnv(unittest.TestCase):
         state, reward, done = env.step(0)
         self.assertEqual(state[0].item(), 1)
         self.assertFalse(done)
-        # First step reward is a float (may include shaping reward)
-        self.assertIsInstance(reward, float)
+        # 第一步奖励为 0
+        self.assertEqual(reward, 0.0)
         # 选第二个相邻节点
         state, reward, done = env.step(1)
         self.assertEqual(state[1].item(), 1)

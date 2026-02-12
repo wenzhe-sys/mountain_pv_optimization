@@ -34,7 +34,7 @@ from algorithm.s2v_network import Structure2Vec, QFunction, encode_graph, get_gr
 from model.partition_sub import PartitionValidator, PartitionResult
 from utils.graph_utils import (
     build_adjacency_graph, build_coord_index, check_connectivity,
-    get_connected_components, calculate_perimeter_fast
+    calculate_perimeter_fast
 )
 
 logger = logging.getLogger(__name__)
@@ -64,10 +64,6 @@ class GraphData:
             w = 1.0  # 统一边权重
             self.edge_weight[i, j] = w
             self.edge_weight[j, i] = w
-
-        # Precompute degree vector for S2V term3 optimization
-        # When edge weights are uniform, term3 reduces from O(N^2*d) to O(N*d)
-        self.degree = self.adj.sum(dim=1)  # [N]
 
 
 class GSet:
@@ -138,8 +134,7 @@ class PartitionEnv:
     def __init__(self, graph_data: GraphData,
                  target_size: int = 22,
                  min_size: int = 18, max_size: int = 26,
-                 excluded: Set[int] = None,
-                 perimeter_lb: float = 60.0, perimeter_ub: float = 90.0):
+                 excluded: Set[int] = None):
         """
         Args:
             graph_data: 图数据
@@ -147,16 +142,12 @@ class PartitionEnv:
             min_size: 最小分区大小
             max_size: 最大分区大小
             excluded: 已被其他分区占用的节点索引集合
-            perimeter_lb: 周长下界 (m)
-            perimeter_ub: 周长上界 (m)
         """
         self.gd = graph_data
         self.target_size = target_size
         self.min_size = min_size
         self.max_size = max_size
         self.excluded = excluded or set()
-        self.perimeter_lb = perimeter_lb
-        self.perimeter_ub = perimeter_ub
 
     def reset(self) -> torch.Tensor:
         """重置环境，返回初始状态。"""
@@ -174,25 +165,26 @@ class PartitionEnv:
         return self.state.clone()
 
     def get_valid_actions(self) -> List[int]:
-        """获取合法动作（未选且与当前分区相邻的节点）。向量化实现。"""
-        available_mask = (self.state == 0)
+        """获取合法动作（未选且与当前分区相邻的节点）。"""
         if not self.current_zone_indices:
-            return available_mask.nonzero(as_tuple=True)[0].tolist()
+            # 分区为空，所有非排除节点都可选
+            return [i for i in range(self.gd.n_nodes)
+                    if self.state[i].item() == 0]
 
-        zone_mask = (self.state == 1)
-        adj_to_zone = self.gd.adj[:, zone_mask].sum(dim=1) > 0
-        valid_mask = available_mask & adj_to_zone
-        return valid_mask.nonzero(as_tuple=True)[0].tolist()
+        valid = []
+        for i in range(self.gd.n_nodes):
+            if self.state[i].item() != 0:
+                continue  # 已选或已排除
+            # 检查是否与当前分区相邻
+            for j in self.current_zone_indices:
+                if self.gd.adj[i, j].item() > 0:
+                    valid.append(i)
+                    break
+        return valid
 
     def step(self, action: int) -> Tuple[torch.Tensor, float, bool]:
         """
         执行动作。
-
-        Reward design: hybrid (per-step shaping + terminal constraint).
-        - Per-step: small reward based on perimeter delta, giving DQN a
-          gradient signal at every step so Q-values don't rely on long
-          chain propagation through 20 steps of reward=0.
-        - Terminal: strong constraint-based reward for capacity + perimeter.
 
         Args:
             action: 节点索引
@@ -201,144 +193,53 @@ class PartitionEnv:
             (next_state, reward, done)
         """
         if self.state[action].item() != 0:
-            # illegal action
+            # 非法动作
             self.done = True
-            return self.state.clone(), -10.0, True
+            return self.state.clone(), -5.0, True
 
-        # add node
+        # 计算旧周长
+        old_perimeter = self._compute_perimeter()
+
+        # 加入节点
         self.state[action] = 1
         self.current_zone_indices.add(action)
         self.step_count += 1
 
-        # incremental perimeter update
-        delta = self._compute_perimeter_delta(action)
-        self.current_perimeter += delta
+        # 计算新周长
+        new_perimeter = self._compute_perimeter()
+        self.current_perimeter = new_perimeter
 
-        # per-step shaping reward: prefer nodes that reduce perimeter
-        # delta < 0 means perimeter decreased (good), delta > 0 means increased
-        # scale to ~[-0.5, +0.5] range so it doesn't dominate terminal reward
-        reward = -delta * 0.05
+        # 奖励 = 周长减少量（论文风格：目标函数变化量）
+        reward = old_perimeter - new_perimeter
 
-        # termination conditions
+        # 第一步没有有意义的周长变化（从 0 到单节点周长），给 0 奖励
+        if self.step_count == 1:
+            reward = 0.0
+
+        # 终止条件
         if self.step_count >= self.max_size:
             self.done = True
         elif self.step_count >= self.min_size:
             valid = self.get_valid_actions()
             if not valid:
                 self.done = True
+            # 达到目标大小时也可以选择停止
             elif self.step_count >= self.target_size:
                 self.done = True
 
-        # terminal reward: strong constraint-based signal
-        if self.done:
-            reward += self._compute_terminal_reward()
-
         return self.state.clone(), reward, self.done
 
-    def _compute_terminal_reward(self) -> float:
-        """
-        Terminal reward — strong constraint-based signal at episode end.
-
-        Works together with per-step shaping reward. The per-step reward
-        gives ~[-0.5, +0.5] per step (total ~[-10, +10] over episode),
-        so terminal reward is scaled to dominate: ~[-15, +15].
-
-        Components:
-          1. Capacity:   +5 if in [min, max], else -5 per panel deviation
-          2. Perimeter:  +5 if in [LB, UB], else -0.5 per meter deviation
-          3. Compactness: +0 to +5 bonus for lower perimeter (within bounds)
-        """
-        size = len(self.current_zone_indices)
-        perimeter = self.current_perimeter
-        terminal = 0.0
-
-        # --- Capacity constraint [min_size, max_size] ---
-        if self.min_size <= size <= self.max_size:
-            terminal += 5.0
-            # bonus for being close to target_size
-            size_dev = abs(size - self.target_size)
-            terminal += max(0.0, 2.0 - 0.5 * size_dev)
-        else:
-            deficit = max(self.min_size - size, size - self.max_size, 0)
-            terminal -= 5.0 * deficit
-
-        # --- Perimeter constraint [LB, UB] ---
-        if size >= self.min_size:
-            if self.perimeter_lb <= perimeter <= self.perimeter_ub:
-                terminal += 5.0
-                # compactness bonus: lower perimeter within bounds is better
-                peri_range = max(self.perimeter_ub - self.perimeter_lb, 1.0)
-                compactness = 1.0 - (perimeter - self.perimeter_lb) / peri_range
-                terminal += 3.0 * max(0.0, compactness)
-            elif perimeter < self.perimeter_lb:
-                terminal -= 0.5 * (self.perimeter_lb - perimeter)
-            else:
-                terminal -= 0.5 * (perimeter - self.perimeter_ub)
-        else:
-            # size too small => perimeter is meaningless, penalize size shortage
-            terminal -= 3.0 * (self.min_size - size)
-
-        return terminal
-
     def _compute_perimeter(self) -> float:
-        """计算当前分区的周长（全量，用于初始化和验证）。"""
+        """计算当前分区的周长。"""
         if not self.current_zone_indices:
             return 0.0
 
         zone_nodes = {self.gd.nodes[i] for i in self.current_zone_indices}
         return calculate_perimeter_fast(zone_nodes, self.gd.graph, self.gd.coord_index)
 
-    def _compute_perimeter_delta(self, action: int) -> float:
-        """增量计算：添加节点 action 后的周长变化量。"""
-        node_name = self.gd.nodes[action]
-        data = self.gd.graph.nodes[node_name]
-        cut_l, cut_w = data.get("cut_spec", (2.0, 3.0))
-
-        # 新节点贡献 4 条边界边
-        delta = 2 * cut_l + 2 * cut_w
-
-        # 减去与已有分区节点的共享边（双向：新节点少一条边界，旧邻居也少一条）
-        zone_node_names = {self.gd.nodes[i] for i in self.current_zone_indices}
-        for neighbor in self.gd.graph.neighbors(node_name):
-            if neighbor in zone_node_names:
-                edge_data = self.gd.graph.edges[node_name, neighbor]
-                direction = edge_data.get("direction", "horizontal")
-                if direction == "vertical":
-                    delta -= 2 * cut_l  # 新节点和旧邻居各减 cut_l
-                else:
-                    delta -= 2 * cut_w
-
-        return max(delta, -self.current_perimeter)  # 周长不能为负
-
     def get_zone_nodes(self) -> Set[str]:
         """获取当前分区的面板 ID 集合。"""
         return {self.gd.nodes[i] for i in self.current_zone_indices}
-
-    def _find_jump_candidates(self) -> List[int]:
-        """当合法动作为空但未达 min_size 时，找距质心最近的未分配节点。"""
-        if not self.current_zone_indices:
-            return []
-
-        # 计算当前分区质心
-        rows, cols = [], []
-        for i in self.current_zone_indices:
-            node_name = self.gd.nodes[i]
-            data = self.gd.graph.nodes[node_name]
-            rows.append(data["row"])
-            cols.append(data["col"])
-        center_r, center_c = np.mean(rows), np.mean(cols)
-
-        # 所有未分配节点按距质心距离排序
-        candidates = []
-        for i in range(self.gd.n_nodes):
-            if self.state[i].item() != 0:
-                continue
-            node_name = self.gd.nodes[i]
-            data = self.gd.graph.nodes[node_name]
-            dist = abs(data["row"] - center_r) + abs(data["col"] - center_c)
-            candidates.append((dist, i))
-        candidates.sort()
-        return [idx for _, idx in candidates[:5]]
 
 
 # ─── DQN 智能体 ───
@@ -362,10 +263,9 @@ class DQNPartitionAgent:
     """
 
     def __init__(self, dim_in: int = 1, dim_embed: int = 64,
-                 T: int = 4, lr: float = 1e-4,
-                 gamma: float = 0.95, tau: float = 0.005,
-                 buffer_size: int = 10000, batch_size: int = 64,
-                 train_every: int = 5,
+                 T: int = 4, lr: float = 1e-3,
+                 gamma: float = 1.0, tau: float = 0.05,
+                 buffer_size: int = 10000, batch_size: int = 16,
                  device: str = "cpu"):
         self.device = torch.device(device)
         self.dim_in = dim_in
@@ -374,8 +274,6 @@ class DQNPartitionAgent:
         self.gamma = gamma
         self.tau = tau
         self.batch_size = batch_size
-        self.train_every = train_every  # 每 N 步训练一次（对齐原作）
-        self._global_step = 0           # 全局步数计数器
 
         # 策略网络
         self.s2v_policy = Structure2Vec(dim_in, dim_embed).to(self.device)
@@ -400,7 +298,6 @@ class DQNPartitionAgent:
         # 存储
         self.gset = GSet()
         self.replay_buffer = ReplayBuffer(buffer_size)
-        self._graph_cache: Dict[str, Tuple[GraphData, int]] = {}  # instance_id -> (gd, gid)
 
         # 训练统计
         self.training_history = []
@@ -417,7 +314,7 @@ class DQNPartitionAgent:
         ew = gd.edge_weight.to(self.device)
 
         s2v = self.s2v_policy if net_type == "policy" else self.s2v_target
-        return encode_graph(s2v, feat, adj, ew, self.T, degree=gd.degree)
+        return encode_graph(s2v, feat, adj, ew, self.T)
 
     def select_action(self, gd: GraphData, state: torch.Tensor,
                        epsilon: float, valid_actions: List[int]) -> int:
@@ -450,135 +347,6 @@ class DQNPartitionAgent:
             valid_q = q_values[valid_actions]
             best_idx = torch.argmax(valid_q).item()
             return valid_actions[best_idx]
-
-    def _post_process_zones(self, zones: List[Set[str]], graph: nx.Graph,
-                             min_panels: int = 18, max_panels: int = 26) -> List[Set[str]]:
-        """
-        后处理：分配遗漏节点 + 连通性修复 + 轻量级重平衡。
-        设计为 O(N × K × avg_degree)，避免昂贵的全图 BFS。
-        """
-        all_nodes = set(graph.nodes())
-        assigned = set()
-        for z in zones:
-            assigned |= z
-        unassigned = all_nodes - assigned
-
-        # 阶段 1：将未分配节点分配到相邻分区（邻接优先，次选最小分区）
-        # 多轮迭代，直到无法再分配
-        for _ in range(10):
-            if not unassigned:
-                break
-            placed_any = False
-            for node in list(unassigned):
-                # 找所有与该节点相邻的分区
-                adjacent_zones = []
-                for nb in graph.neighbors(node):
-                    for zi, z in enumerate(zones):
-                        if nb in z and len(z) < max_panels:
-                            adjacent_zones.append(zi)
-                if adjacent_zones:
-                    # 选最小的分区（帮助平衡）
-                    best_zi = min(adjacent_zones, key=lambda zi: len(zones[zi]))
-                    zones[best_zi].add(node)
-                    unassigned.discard(node)
-                    placed_any = True
-            if not placed_any:
-                break
-
-        # 无法通过邻接分配的节点，放入最近的最小分区
-        for node in list(unassigned):
-            node_data = graph.nodes[node]
-            nr, nc = node_data["row"], node_data["col"]
-            best_zi, best_dist = -1, float("inf")
-            for zi, z in enumerate(zones):
-                if len(z) >= max_panels or not z:
-                    continue
-                for zn in z:
-                    zd = graph.nodes[zn]
-                    dist = abs(nr - zd["row"]) + abs(nc - zd["col"])
-                    if dist < best_dist:
-                        best_dist = dist
-                        best_zi = zi
-                    break  # 只检查第一个节点作为代理，够快
-            if best_zi >= 0:
-                zones[best_zi].add(node)
-                unassigned.discard(node)
-
-        # 阶段 2：连通性修复 — 碎片迁移到相邻分区
-        for _round in range(3):
-            repaired = False
-            for zi in range(len(zones)):
-                components = get_connected_components(graph, zones[zi])
-                if len(components) <= 1:
-                    continue
-
-                # 保留最大分量，迁移碎片
-                components.sort(key=len, reverse=True)
-                zones[zi] = components[0]
-                repaired = True
-
-                for fragment in components[1:]:
-                    # 尝试整块迁移到相邻分区
-                    frag_neighbors = {}  # zj -> count of adjacent edges
-                    for node in fragment:
-                        for nb in graph.neighbors(node):
-                            for zj in range(len(zones)):
-                                if zj != zi and nb in zones[zj]:
-                                    frag_neighbors[zj] = frag_neighbors.get(zj, 0) + 1
-                    # 选邻接最多且不超载的分区
-                    best_zj = -1
-                    best_score = -1
-                    for zj, score in frag_neighbors.items():
-                        if len(zones[zj]) + len(fragment) <= max_panels and score > best_score:
-                            best_score = score
-                            best_zj = zj
-                    if best_zj >= 0:
-                        zones[best_zj] |= fragment
-                    else:
-                        # 逐节点分配
-                        for node in fragment:
-                            placed = False
-                            for zj in range(len(zones)):
-                                if zj == zi or len(zones[zj]) >= max_panels:
-                                    continue
-                                for nb in graph.neighbors(node):
-                                    if nb in zones[zj]:
-                                        zones[zj].add(node)
-                                        placed = True
-                                        break
-                                if placed:
-                                    break
-                            if not placed:
-                                zones[zi].add(node)
-
-            if not repaired:
-                break
-
-        # 阶段 3：快速重平衡（无连通性检查，只移边界节点）
-        for _round in range(10):
-            moved = False
-            for zi in range(len(zones)):
-                if len(zones[zi]) <= max_panels:
-                    continue
-                for node in list(zones[zi]):
-                    if len(zones[zi]) <= max_panels:
-                        break
-                    # 只移有邻居在其他欠载分区的边界节点
-                    for nb in graph.neighbors(node):
-                        target_zi = None
-                        for zj in range(len(zones)):
-                            if zj != zi and nb in zones[zj] and len(zones[zj]) < max_panels:
-                                target_zi = zj
-                                break
-                        if target_zi is not None:
-                            zones[zi].remove(node)
-                            zones[target_zi].add(node)
-                            moved = True
-                            break
-            if not moved:
-                break
-
-        return zones
 
     def train_step(self) -> Optional[float]:
         """
@@ -622,17 +390,8 @@ class DQNPartitionAgent:
                 target = torch.tensor(r, device=self.device, dtype=torch.float32)
             else:
                 with torch.no_grad():
-                    # 找 next_state 的合法动作（向量化邻接检查，与 PartitionEnv 一致）
-                    available_mask = (s_next == 0)
-                    zone_mask = (s_next == 1)
-
-                    if zone_mask.any():
-                        # 向量化：adj[available, :][:, zone] 的行求和 > 0
-                        adj_to_zone = gd.adj[:, zone_mask].sum(dim=1)  # [N]
-                        valid_mask = available_mask & (adj_to_zone > 0)
-                        remaining = valid_mask.nonzero(as_tuple=True)[0].tolist()
-                    else:
-                        remaining = available_mask.nonzero(as_tuple=True)[0].tolist()
+                    # 找 next_state 的合法动作
+                    remaining = (s_next == 0).nonzero(as_tuple=True)[0].tolist()
 
                     if remaining:
                         # Double DQN: 用 policy 网络选动作，用 target 网络评估
@@ -656,27 +415,20 @@ class DQNPartitionAgent:
         q_targets = torch.stack(q_targets_list)
         loss = nn.MSELoss()(q_values, q_targets)
 
-        # 反向传播（含梯度裁剪，防止训练爆炸）
+        # 反向传播
         self.optimizer.zero_grad()
         loss.backward()
-        # Only clip params that have gradients (Q-head when S2V is frozen)
-        trainable_params = [p for p in
-            list(self.s2v_policy.parameters()) + list(self.q_policy.parameters())
-            if p.requires_grad]
-        if trainable_params:
-            torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=10.0)
         self.optimizer.step()
 
-        # 软更新目标网络 (only update params that are being trained)
+        # 软更新目标网络
         for p, tp in zip(self.s2v_policy.parameters(), self.s2v_target.parameters()):
-            if p.requires_grad:
-                tp.data.copy_(self.tau * p.data + (1 - self.tau) * tp.data)
+            tp.data.copy_(self.tau * p.data + (1 - self.tau) * tp.data)
         for p, tp in zip(self.q_policy.parameters(), self.q_target.parameters()):
             tp.data.copy_(self.tau * p.data + (1 - self.tau) * tp.data)
 
         return loss.item()
 
-    def _train_epoch_sequential(self, instances: List[Dict], epoch: int,
+    def train_epoch(self, instances: List[Dict], epoch: int,
                      epsilon: float, verbose_instances: bool = False) -> Dict:
         """
         训练一个 epoch（遍历所有算例）。
@@ -705,13 +457,8 @@ class DQNPartitionAgent:
             target_size = n_nodes // n_zones
             pva_params = inst["pva_params"]
 
-            # 缓存 GraphData，避免每 epoch 重复创建（节省内存 + 保持 gid 一致）
-            if inst_id in self._graph_cache:
-                gd, gid = self._graph_cache[inst_id]
-            else:
-                gd = GraphData(graph, str(self.device))
-                gid = self.gset.push(gd)
-                self._graph_cache[inst_id] = (gd, gid)
+            gd = GraphData(graph, str(self.device))
+            gid = self.gset.push(gd)
 
             # 分 K 轮构建 K 个分区（所有分区都由 DQN 决策）
             excluded_indices = set()
@@ -725,19 +472,11 @@ class DQNPartitionAgent:
                 current_target = remaining_count // zones_left
                 current_max = min(26, remaining_count - (zones_left - 1) * 18) if zones_left > 1 else remaining_count
 
-                # Last zone is forced to take remaining nodes — its negative
-                # rewards would poison the replay buffer and teach Q-network
-                # that good early decisions lead to bad outcomes.
-                # Skip experience collection for the last zone.
-                is_last_zone = (k == n_zones - 1)
-
                 env = PartitionEnv(
                     gd, target_size=current_target,
                     min_size=min(18, remaining_count),
                     max_size=current_max,
-                    excluded=excluded_indices,
-                    perimeter_lb=pva_params["LB"],
-                    perimeter_ub=pva_params["UB"]
+                    excluded=excluded_indices
                 )
                 state = env.reset()
 
@@ -745,52 +484,33 @@ class DQNPartitionAgent:
                 while not env.done:
                     valid = env.get_valid_actions()
                     if not valid:
-                        # 防坍塌：未达 min_size 时跳跃到最近未分配节点
-                        if env.step_count < env.min_size:
-                            jumps = env._find_jump_candidates()
-                            if jumps:
-                                action = jumps[0]
-                                next_state, reward, done = env.step(action)
-                                reward -= 2.0  # 跳跃惩罚
-                                if not is_last_zone:
-                                    self.replay_buffer.push(gid, state, action, reward, next_state, done)
-                                self._global_step += 1
-                                if self._global_step % self.train_every == 0:
-                                    loss = self.train_step()
-                                    if loss is not None:
-                                        instance_losses.append(loss)
-                                state = next_state
-                                episode_reward += reward
-                                continue
                         break
 
                     action = self.select_action(gd, state, epsilon, valid)
                     next_state, reward, done = env.step(action)
 
-                    if not is_last_zone:
-                        self.replay_buffer.push(gid, state, action, reward, next_state, done)
-                    self._global_step += 1
+                    self.replay_buffer.push(gid, state, action, reward, next_state, done)
 
-                    # 每 train_every 步训练一次（对齐原作，避免每步训练的巨大开销）
-                    if self._global_step % self.train_every == 0:
-                        loss = self.train_step()
-                        if loss is not None:
-                            instance_losses.append(loss)
+                    loss = self.train_step()
+                    if loss is not None:
+                        instance_losses.append(loss)
 
                     state = next_state
                     episode_reward += reward
 
                 instance_reward += episode_reward
                 zone_nodes = env.get_zone_nodes()
+                # 最后一个分区补充剩余节点
+                if k == n_zones - 1:
+                    for i in range(gd.n_nodes):
+                        if i not in excluded_indices and i not in env.current_zone_indices:
+                            zone_nodes.add(gd.nodes[i])
                 zones.append(zone_nodes)
                 excluded_indices |= env.current_zone_indices
 
             epoch_rewards.append(instance_reward)
             if instance_losses:
                 epoch_losses.append(np.mean(instance_losses))
-
-            # 后处理：分配遗漏节点 + 连通性修复 + 重平衡
-            zones = self._post_process_zones(zones, graph, min_panels=18, max_panels=26)
 
             # 验证约束
             coord_index = build_coord_index(graph)
@@ -836,106 +556,6 @@ class DQNPartitionAgent:
         self.training_history.append(stats)
         return stats
 
-    # ─── 并行训练（多线程收集经验） ───
-
-    def _collect_single_instance(self, gd: 'GraphData', gid: int,
-                                   n_zones: int, n_nodes: int,
-                                   pva_params: Dict, epsilon: float,
-                                   graph: nx.Graph, inst_id: str) -> Dict:
-        """
-        收集单个算例的经验数据（线程安全：只做推理，不更新梯度）。
-
-        Returns:
-            包含 experiences, reward, constraint_stats 等的字典
-        """
-        excluded_indices = set()
-        zones = []
-        instance_reward = 0.0
-        experiences = []  # (gid, state, action, reward, next_state, done)
-
-        for k in range(n_zones):
-            remaining_count = n_nodes - len(excluded_indices)
-            zones_left = n_zones - k
-            current_target = remaining_count // zones_left
-            current_max = min(26, remaining_count - (zones_left - 1) * 18) if zones_left > 1 else remaining_count
-
-            is_last_zone = (k == n_zones - 1)
-
-            env = PartitionEnv(
-                gd, target_size=current_target,
-                min_size=min(18, remaining_count),
-                max_size=current_max,
-                excluded=excluded_indices,
-                perimeter_lb=pva_params["LB"],
-                perimeter_ub=pva_params["UB"]
-            )
-            state = env.reset()
-
-            episode_reward = 0.0
-            while not env.done:
-                valid = env.get_valid_actions()
-                if not valid:
-                    if env.step_count < env.min_size:
-                        jumps = env._find_jump_candidates()
-                        if jumps:
-                            action = jumps[0]
-                            next_state, reward, done = env.step(action)
-                            reward -= 2.0
-                            if not is_last_zone:
-                                experiences.append((gid, state, action, reward, next_state, done))
-                            state = next_state
-                            episode_reward += reward
-                            continue
-                    break
-
-                action = self.select_action(gd, state, epsilon, valid)
-                next_state, reward, done = env.step(action)
-                if not is_last_zone:
-                    experiences.append((gid, state, action, reward, next_state, done))
-                state = next_state
-                episode_reward += reward
-
-            instance_reward += episode_reward
-            zones.append(env.get_zone_nodes())
-            excluded_indices |= env.current_zone_indices
-
-        # 后处理
-        zones = self._post_process_zones(zones, graph, min_panels=18, max_panels=26)
-
-        # 验证约束
-        validator = PartitionValidator(
-            graph, n_zones, min_panels=18, max_panels=26,
-            perimeter_lb=pva_params["LB"], perimeter_ub=pva_params["UB"]
-        )
-        result = validator.validate(zones)
-
-        cs = {"capacity": 0, "connected": 0, "perimeter": 0, "total_zones": len(result.zone_details)}
-        for detail in result.zone_details:
-            if detail["capacity_ok"]: cs["capacity"] += 1
-            if detail["is_connected"]: cs["connected"] += 1
-            if detail["perimeter_ok"]: cs["perimeter"] += 1
-
-        return {
-            "inst_id": inst_id,
-            "experiences": experiences,
-            "reward": instance_reward,
-            "constraint_stats": cs,
-            "sizes": [len(z) for z in zones],
-            "is_feasible": result.is_feasible,
-        }
-
-    def train_epoch(self, instances: List[Dict], epoch: int,
-                     epsilon: float, verbose_instances: bool = False,
-                     n_workers: int = 8) -> Dict:
-        """
-        训练一个 epoch（串行版，ThreadPoolExecutor 因 GIL 无加速效果已废弃）。
-
-        Delegates to _train_epoch_sequential; n_workers kept for API compat.
-        """
-        return self._train_epoch_sequential(
-            instances, epoch, epsilon, verbose_instances=verbose_instances
-        )
-
     def solve(self, graph: nx.Graph, n_zones: int,
               pva_params: Dict = None) -> PartitionResult:
         """推理：用训练好的策略构建分区方案。所有分区都由 DQN 决策。"""
@@ -960,43 +580,28 @@ class DQNPartitionAgent:
             env = PartitionEnv(gd, target_size=current_target,
                                 min_size=min(18, remaining_count),
                                 max_size=current_max,
-                                excluded=excluded_indices,
-                                perimeter_lb=pva_params.get("LB", 60.0),
-                                perimeter_ub=pva_params.get("UB", 90.0))
+                                excluded=excluded_indices)
             state = env.reset()
 
             while not env.done:
                 valid = env.get_valid_actions()
                 if not valid:
-                    if env.step_count < env.min_size:
-                        jumps = env._find_jump_candidates()
-                        if jumps:
-                            action = jumps[0]
-                            state, _, _ = env.step(action)
-                            continue
                     break
                 action = self.select_action(gd, state, epsilon=0.0, valid_actions=valid)
                 state, _, _ = env.step(action)
 
             zone_nodes = env.get_zone_nodes()
+            # 如果是最后一个分区且还有剩余，补进来
+            if k == n_zones - 1:
+                for i in range(gd.n_nodes):
+                    if i not in excluded_indices and i not in env.current_zone_indices:
+                        zone_nodes.add(gd.nodes[i])
+
             zones.append(zone_nodes)
             excluded_indices |= env.current_zone_indices
-
-        # Post-process: assign missing nodes + connectivity repair + rebalance
-        zones = self._post_process_zones(zones, graph, min_panels=18, max_panels=26)
-
-        # Use heuristic's robust rebalance + local search to fix constraint violations
-        from algorithm.partition_heuristic import GreedyPartitioner
-        fixer = GreedyPartitioner(
-            graph, n_zones, min_panels=18, max_panels=26,
-            perimeter_lb=pva_params.get("LB", 60.0),
-            perimeter_ub=pva_params.get("UB", 90.0),
-            local_search_iters=200, random_seed=0
-        )
-        zones = fixer._repair_connectivity(zones)
-        zones = fixer._rebalance(zones)
-        zones = fixer._local_search(zones)
-        zones = fixer._fix_perimeter_violations(zones)
+            # 补充最后分区新加的节点到 excluded
+            if k == n_zones - 1:
+                excluded_indices |= {gd.node_to_idx[n] for n in zone_nodes if n in gd.node_to_idx}
 
         validator = PartitionValidator(
             graph, n_zones, min_panels=18, max_panels=26,
@@ -1041,13 +646,8 @@ class DQNPartitionAgent:
             target_size = n_nodes // n_zones
             pva_params = inst["pva_params"]
 
-            # 缓存 GraphData（与 train_epoch 共享缓存）
-            if inst_id in self._graph_cache:
-                gd, gid = self._graph_cache[inst_id]
-            else:
-                gd = GraphData(graph, str(self.device))
-                gid = self.gset.push(gd)
-                self._graph_cache[inst_id] = (gd, gid)
+            gd = GraphData(graph, str(self.device))
+            gid = self.gset.push(gd)
 
             for seed in range(n_runs_per_instance):
                 total_runs += 1
@@ -1191,8 +791,8 @@ class DQNPartitionAgent:
             total_loss = 0.0
             n_batches = 0
 
-            # mini-batch 训练（用较大 batch 减少更新次数）
-            batch_size = 128
+            # mini-batch 训练
+            batch_size = 32
             for i in range(0, len(all_samples), batch_size):
                 batch = all_samples[i:i + batch_size]
                 batch_loss = torch.tensor(0.0, device=self.device)
@@ -1275,7 +875,7 @@ class DQNPartitionAgent:
         }, path)
 
     def load_checkpoint(self, path: str) -> Dict:
-        ckpt = torch.load(path, map_location=self.device, weights_only=False)
+        ckpt = torch.load(path, map_location=self.device)
         self.s2v_policy.load_state_dict(ckpt["s2v_policy"])
         self.s2v_target.load_state_dict(ckpt["s2v_target"])
         self.q_policy.load_state_dict(ckpt["q_policy"])
