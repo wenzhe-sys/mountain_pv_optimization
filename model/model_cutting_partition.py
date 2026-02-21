@@ -14,7 +14,7 @@ import os
 import logging
 from typing import Dict, Optional
 
-from algorithm.benders_decomposition import BendersDecomposition
+from modules.module1.algorithm.benders_decomposition import BendersDecomposition
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +97,7 @@ class CuttingPartitionModel:
         # E102: 切割长度检查（spec_l 必须是 2.0 的整数倍）
         valid_specs = [2.0, 4.0, 6.0, 8.0, 10.0, 12.0]
         for material in output["cut_result"]:
-            if material.get("is_used"):
+            if isinstance(material, dict) and material.get("is_used"):
                 for cut in material.get("cuts", []):
                     spec_l = cut.get("spec_l", 0)
                     if spec_l not in valid_specs:
@@ -146,7 +146,7 @@ def validate_m1_output(output: Dict) -> Dict:
     # E102
     valid_specs = {2.0, 4.0, 6.0, 8.0, 10.0, 12.0}
     for mat in output["cut_result"]:
-        if mat.get("is_used"):
+        if isinstance(mat, dict) and mat.get("is_used"):
             for cut in mat.get("cuts", []):
                 if cut.get("spec_l") not in valid_specs:
                     errors.append(f"E102: 非法切割长度 {cut.get('spec_l')}")

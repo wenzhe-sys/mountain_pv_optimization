@@ -19,7 +19,7 @@ from datetime import datetime
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
 
-from algorithm.benders_decomposition import BendersDecomposition
+from modules.module1.algorithm.benders_decomposition import BendersDecomposition
 from utils.load_instance import InstanceLoader
 
 
@@ -39,7 +39,7 @@ def run_all(args):
     # DQN 模型加载
     dqn_solver = None
     if args.method == "dqn" and args.model:
-        from algorithm.dqn_agent import DQNPartitionAgent
+        from modules.module1.algorithm.dqn_agent import DQNPartitionAgent
         dqn_solver = DQNPartitionAgent(device="cpu")
         dqn_solver.load_checkpoint(args.model)
         print(f"  DQN 模型: {args.model}")
@@ -80,15 +80,31 @@ def run_all(args):
         avg_perimeter = sum(z["perimeter"] for z in output["zone_summary"]) / n_zones if n_zones > 0 else 0
         constraints = output["constraint_satisfaction"]
 
+        # 处理constraint_satisfaction可能是布尔值的情况
+        capacity_ok = "N/A"
+        connected_ok = "N/A"
+        perimeter_ok = "N/A"
+
+        if isinstance(constraints, dict):
+            capacity_ok = constraints.get("逆变器容量约束", "N/A")
+            connected_ok = constraints.get("分区连通性", "N/A")
+            perimeter_ok = constraints.get("分区周长约束", "N/A")
+        elif isinstance(constraints, bool):
+            # 如果是布尔值，所有约束都被视为相同状态
+            status = "✓" if constraints else "✗"
+            capacity_ok = status
+            connected_ok = status
+            perimeter_ok = status
+
         summary.append({
             "算例": inst_id,
             "面板数": instance["instance_info"]["n_nodes"],
             "分区数": n_zones,
             "面板分布": f"{min(panel_counts)}-{max(panel_counts)}" if panel_counts else "N/A",
             "平均周长": f"{avg_perimeter:.1f}m",
-            "容量": constraints.get("逆变器容量约束", "N/A"),
-            "连通": constraints.get("分区连通性", "N/A"),
-            "周长": constraints.get("分区周长约束", "N/A"),
+            "容量": capacity_ok,
+            "连通": connected_ok,
+            "周长": perimeter_ok,
             "耗时": f"{elapsed:.1f}s",
         })
 
