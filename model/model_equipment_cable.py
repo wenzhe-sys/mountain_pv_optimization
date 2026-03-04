@@ -144,6 +144,18 @@ class EquipmentCableModel:
         print(f"  - 约束满足度：{module2_output['constraint_satisfaction']}")
         print(f"  - 结果文件：{save_path}")
         
+        # 5. 可视化（自动生成设备布局、路由、成本分解等图表）
+        try:
+            from utils.visualization_module2 import Module2Visualizer
+            viz = Module2Visualizer()
+            viz.generate_all_plots(
+                module2_output, self.module1_output,
+                self.instance_data,
+                instance_id=module2_output["instance_id"],
+            )
+        except Exception as e:
+            print(f"  - 可视化生成失败（可忽略）: {e}")
+        
         return module2_output
 
 # 测试代码（单独运行时执行）

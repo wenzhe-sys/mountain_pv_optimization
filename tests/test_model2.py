@@ -10,9 +10,10 @@ class TestModel2(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """初始化测试环境：运行模块一→获取M1-Output→运行模块二"""
-        # 路径配置
-        cls.instance_path = r"C:\mountain_pv_optimization\data\processed\PV\public\easy\public_easy_r1.json"
-        cls.module1_output_path = r"C:\mountain_pv_optimization\data\results\module1\M1-Output_r1.json"
+        # 路径配置（自动定位项目根目录）
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        cls.instance_path = os.path.join(project_root, "data", "processed", "PV", "public", "easy", "public_easy_r1.json")
+        cls.module1_output_path = os.path.join(project_root, "data", "results", "module1", "M1-Output_r1.json")
         
         # 确保模块一已运行（若未运行则自动执行）
         if not os.path.exists(cls.module1_output_path):
@@ -45,7 +46,12 @@ class TestModel2(unittest.TestCase):
 
     def test_trench_cable_count_constraint(self):
         """测试单沟电缆数约束（≤4根，错误码E202）"""
-        N_max = self.instance["equipment_params"]["cable"]["I_max"]  # 4根
+        # 修复: 从 constraint_info 提取 N_max，而非 I_max（电流值=200）
+        N_max = 4
+        for c in self.instance.get("constraint_info", []):
+            if isinstance(c, dict) and c.get("type") == "trench_max_cables":
+                N_max = int(c.get("value", 4))
+                break
         for trench in self.module2_output["trench_summary"]:
             with self.subTest(trench_id=trench["trench_id"], cable_count=trench["cable_count"]):
                 self.assertLessEqual(trench["cable_count"], N_max, f"管沟{trench['trench_id']}电缆数{trench['cable_count']}超限（错误码E202）")
