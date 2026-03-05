@@ -3,7 +3,7 @@ import json
 from utils.data_preprocess import PVDataPreprocessor
 from model.model_cutting_partition import CuttingPartitionModel
 from model.model_equipment_cable import EquipmentCableModel
-from model.model_integration import IntegrationOptimizationModel
+from modules.module3.model.model_integration import IntegrationOptimizationModel
 from utils.load_instance import instance_loader
 from utils.metric_calculation import metric_calculator
 from utils.visualization import result_visualizer
@@ -50,12 +50,36 @@ def main(instance_id: str = "r1"):
     coverage_rate = metric_calculator.calculate_coverage_rate(module1_output, instance)
     trench_optimization_rate = metric_calculator.calculate_trench_optimization_rate(module2_output)
     constraint_satisfaction = metric_calculator.calculate_constraint_satisfaction_rate(module3_output["constraint_satisfaction"])
+    
+    # 多目标优化指标
+    efficiency = module3_output.get('optimized_params', {}).get('efficiency', 0.0)
+    reliability = module3_output.get('optimized_params', {}).get('reliability', 0.0)
+    pareto_solutions = len(module3_output.get('pareto_front', []))
+    
     # 输出指标汇总
     print(f"\n===== 核心指标汇总 =====")
     print(f"1. 覆盖面积利用率：{coverage_rate}%")
     print(f"2. 共沟成本优化率：{trench_optimization_rate}%")
     print(f"3. 约束满足度：{constraint_satisfaction}%")
     print(f"4. 全生命周期总成本：{module3_output['total_cost_summary']['total_cost']:.2f}万元")
+    print(f"5. 系统效率：{efficiency:.4f}")
+    print(f"6. 系统可靠性：{reliability:.4f}")
+    print(f"7. 帕累托最优解数量：{pareto_solutions}")
+    
+    # 输出模块间反馈
+    if 'module_feedback' in module3_output:
+        print(f"\n===== 模块间反馈 =====")
+        feedback = module3_output['module_feedback']
+        if 'module1' in feedback:
+            print(f"模块一建议：")
+            print(f"  - 推荐分区数量：{feedback['module1'].get('suggested_zone_count', 'N/A')}")
+            print(f"  - 推荐面板密度：{feedback['module1'].get('recommended_panel_density', 'N/A')}")
+        if 'module2' in feedback:
+            print(f"模块二建议：")
+            print(f"  - 最优电缆半径：{feedback['module2'].get('optimal_cable_radius', 'N/A'):.4f}m")
+            print(f"  - 建议管沟数量：{feedback['module2'].get('suggested_trench_count', 'N/A')}")
+            print(f"  - 推荐每沟电缆数：{feedback['module2'].get('recommended_cable_count_per_trench', 'N/A')}")
+    
     # 可视化
     result_visualizer.plot_partition(module1_output, instance_id)
     result_visualizer.plot_cost_breakdown(module3_output, instance_id)
@@ -67,4 +91,4 @@ def main(instance_id: str = "r1"):
 
 if __name__ == "__main__":
     # 支持指定算例ID运行（如r1、r2...r17）
-    main(instance_id="r2")
+    main(instance_id="r16")

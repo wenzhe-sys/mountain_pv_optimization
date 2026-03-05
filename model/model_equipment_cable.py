@@ -1,7 +1,7 @@
 import json
 import os
 from typing import Dict
-from algorithm.branch_and_price import BranchAndPrice
+from modules.module2.algorithm.branch_and_price import BranchAndPrice
 
 class EquipmentCableModel:
     def __init__(self, instance_path: str, module1_output_path: str = None, module1_output: Dict = None):

@@ -24,6 +24,7 @@ import json
 import time
 import glob
 import argparse
+import math
 from datetime import datetime
 
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -32,7 +33,7 @@ sys.path.insert(0, project_root)
 import torch
 import numpy as np
 
-from algorithm.dqn_agent import DQNPartitionAgent
+from modules.module1.algorithm.dqn_agent import DQNPartitionAgent
 from utils.load_instance import InstanceLoader
 
 
@@ -83,13 +84,15 @@ def train(args):
         print("  ✗ 未找到可用算例", flush=True)
         return
 
-    # train_every=5: 每 5 步训练一次（减少 80% 计算量，对齐原作的 n-step 策略）
+    # 优化超参数配置
     agent = DQNPartitionAgent(
-        dim_in=1, dim_embed=64, T=4,
-        lr=args.lr, gamma=0.95, tau=0.005,
-        buffer_size=10000, batch_size=64,
+        dim_in=1, dim_embed=128, T=6,  # 增加嵌入维度和S2V迭代次数
+        lr=args.lr, gamma=1.0, tau=0.005,  # 使用gamma=1.0
+        buffer_size=50000, batch_size=128,  # 优化批次大小
         train_every=5,
-        device=device
+        device=device,
+        use_prioritized_buffer=True,  # 启用优先级经验回放
+        use_dueling=True  # 启用Dueling DQN
     )
 
     # ─── 阶段一：专家经验生成 + 行为克隆预训练 ───
@@ -132,14 +135,28 @@ def train(args):
 
     # RL fine-tuning: freeze S2V, reset Q-heads, only train Q-function
     import torch.nn as nn
-    nn.init.xavier_uniform_(agent.q_policy.theta5)
-    nn.init.xavier_uniform_(agent.q_policy.theta6)
-    nn.init.xavier_uniform_(agent.q_policy.theta7)
-    agent.q_target.load_state_dict(agent.q_policy.state_dict())
-    for p in agent.s2v_policy.parameters():
+    
+    # 根据Q函数类型进行不同的初始化
+    if hasattr(agent.qfunc_policy, 'theta5'):
+        # 传统QFunction初始化
+        nn.init.xavier_uniform_(agent.qfunc_policy.theta5)
+        nn.init.xavier_uniform_(agent.qfunc_policy.theta6)
+        nn.init.xavier_uniform_(agent.qfunc_policy.theta7)
+    else:
+        # DuelingQFunction已经在构造函数中初始化
+        pass
+    
+    agent.qfunc_target.load_state_dict(agent.qfunc_policy.state_dict())
+    for p in agent.s2v.parameters():
         p.requires_grad = False
     agent.optimizer = torch.optim.Adam(
-        agent.q_policy.parameters(), lr=args.lr
+        agent.qfunc_policy.parameters(), lr=args.lr
+    )
+
+    # 添加学习率调度器
+    import torch.optim.lr_scheduler as lr_scheduler
+    scheduler = lr_scheduler.CosineAnnealingLR(
+        agent.optimizer, T_max=args.epochs, eta_min=1e-6
     )
 
     print("\n" + "─" * 56, flush=True)
@@ -166,10 +183,10 @@ def train(args):
     ckpt_dir = args.checkpoint_dir
     os.makedirs(ckpt_dir, exist_ok=True)
 
-    # 线性 epsilon 衰减：前 eps_decay_epochs 轮从 1.0 衰减到 0.05，之后保持 0.05
+    # 指数 epsilon 衰减：更平滑的探索率下降
     epsilon_start = 1.0
-    epsilon_end = 0.05
-    eps_decay_epochs = args.eps_decay_epochs
+    epsilon_end = 0.01
+    eps_decay_rate = 0.99
 
     print(f"\n【开始训练】轮次 {start_epoch} → {args.epochs} | "
           f"学习率 {args.lr} | gamma={agent.gamma} | tau={agent.tau}", flush=True)
@@ -189,14 +206,17 @@ def train(args):
     for epoch in range(start_epoch, args.epochs + 1):
         epoch_start = time.time()
 
-        # 线性 epsilon 衰减（在 eps_decay_epochs 轮内完成）
-        progress = min(1.0, (epoch - 1) / max(eps_decay_epochs - 1, 1))
-        epsilon = epsilon_start - (epsilon_start - epsilon_end) * progress
+        # 指数 epsilon 衰减
+        epsilon = epsilon_end + (epsilon_start - epsilon_end) * math.exp(-eps_decay_rate * (epoch - 1))
+        epsilon = max(epsilon, epsilon_end)  # 确保不低于最小值
 
         verbose_inst = (epoch == start_epoch)
         stats = agent.train_epoch(instances, epoch, epsilon,
                                     verbose_instances=verbose_inst,
                                     n_workers=args.n_workers)
+        
+        # 更新学习率
+        scheduler.step()
 
         epoch_time = time.time() - epoch_start
         elapsed = time.time() - global_start
@@ -285,7 +305,7 @@ def show_status(args):
 
 def evaluate(args):
     print(f"\n【模型评估】加载 {args.eval}...", flush=True)
-    agent = DQNPartitionAgent(device="cpu")
+    agent = DQNPartitionAgent(device="cpu", use_dueling=True)
     meta = agent.load_checkpoint(args.eval)
     print(f"  轮次: {meta['epoch']}, 最优奖励: {meta['best_reward']:.4f}", flush=True)
 
@@ -305,7 +325,7 @@ def evaluate(args):
 
 def main():
     parser = argparse.ArgumentParser(description="S2V-DQN 训练管线")
-    parser.add_argument("--epochs", type=int, default=300)
+    parser.add_argument("--epochs", type=int, default=500)  # 增加训练轮次
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--device", type=str, default=None)
     parser.add_argument("--resume", type=str, default=None)
@@ -313,7 +333,7 @@ def main():
     parser.add_argument("--save-every", type=int, default=25)
     parser.add_argument("--log-every", type=int, default=1)
     parser.add_argument("--patience", type=int, default=50)
-    parser.add_argument("--eps-decay-epochs", type=int, default=100)
+    parser.add_argument("--eps-decay-epochs", type=int, default=200)  # 增加epsilon衰减步数
     parser.add_argument("--status", type=str, default=None)
     parser.add_argument("--eval", type=str, default=None)
     # 预训练参数

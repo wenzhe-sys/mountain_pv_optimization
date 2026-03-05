@@ -3,11 +3,11 @@ import os
 import numpy as np
 import torch
 from typing import Dict
-from algorithm.reinforcement_learning import RLIntegrationOptimizer
+from modules.module3.algorithm.reinforcement_learning import RLIntegrationOptimizer
 from utils.load_instance import load_instance, validate_instance
 
 class IntegrationOptimizationModel:
-    def __init__(self, instance_path: str, module2_output_path: str):
+    def __init__(self, instance_path: str, module2_output_path: str, module1_output: Dict = None):
         """加载算例、模块二输出，初始化集成优化模型（添加随机种子固定）"""
         # 核心补充：固定随机种子，保证RL优化结果可复现
         np.random.seed(42)
@@ -17,11 +17,15 @@ class IntegrationOptimizationModel:
         
         self.instance_path = instance_path
         self.module2_output_path = module2_output_path
+        self.module1_output = module1_output
+        self.module1_output = module1_output
+        self.module1_output = module1_output
+        self.module1_output = module1_output
         
         self.instance_data = self.load_instance()
         self.module2_output = self.load_module2_output()
         
-        self.rl_optimizer = RLIntegrationOptimizer(self.instance_data, self.module2_output.copy())
+        self.rl_optimizer = RLIntegrationOptimizer(self.instance_data, self.module2_output.copy(), self.module1_output)
         
         # 使用相对路径构建结果保存路径
         current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -91,7 +95,10 @@ class IntegrationOptimizationModel:
             "optimized_params": {
                 "cable_radius": float(integration_result["optimized_params"]["cable_radius"]),
                 "trench_cable_count": float(integration_result["optimized_params"]["trench_cable_count"]),
-                "inverter_load_rate": float(integration_result["optimized_params"]["inverter_load_rate"])
+                "inverter_load_rate": float(integration_result["optimized_params"]["inverter_load_rate"]),
+                "lambda_weight": float(integration_result["optimized_params"].get("lambda_weight", self.instance_data["loss_params"]["lambda"])),
+                "reliability": float(integration_result["optimized_params"].get("reliability", 0.0)),
+                "efficiency": float(integration_result["optimized_params"].get("efficiency", 0.0))
             },
             "loss_detail": [
                 {
@@ -106,7 +113,13 @@ class IntegrationOptimizationModel:
                 "全流程耦合约束": "100%"
             },
             # 核心修复：补充calculation_params字段（传递给测试用例）
-            "calculation_params": integration_result["calculation_params"]
+            "calculation_params": integration_result["calculation_params"],
+            # 新增：性能指标
+            "performance_metrics": integration_result.get("performance_metrics", {}),
+            # 新增：帕累托前沿
+            "pareto_front": integration_result.get("pareto_front", []),
+            # 新增：模块间反馈
+            "module_feedback": integration_result.get("module_feedback", {})
         }
         
         # 保存结果
@@ -119,6 +132,8 @@ class IntegrationOptimizationModel:
         print(f"  - 建设成本：{module3_output['total_cost_summary']['construction_cost']:.2f} 万元")
         print(f"  - 运行损耗成本（未加权）：{module3_output['total_cost_summary']['operation_loss_cost']:.2f} 万元")
         print(f"  - 优化参数：{module3_output['optimized_params']}")
+        print(f"  - 性能指标：效率={module3_output['optimized_params'].get('efficiency', 0.0):.4f}, 可靠性={module3_output['optimized_params'].get('reliability', 0.0):.4f}")
+        print(f"  - 帕累托最优解数量：{len(module3_output.get('pareto_front', []))}")
         print(f"  - 结果文件：{save_path}")
         
         return module3_output

@@ -1,0 +1,3435 @@
+{
+  "instance_id": "r16",
+  "module1_output": {
+    "instance_id": "r16",
+    "cut_result": [
+      {
+        "material_id": "mat_0",
+        "is_used": true,
+        "cuts": [
+          {
+            "spec_l": 2.0,
+            "quantity": 6
+          }
+        ]
+      },
+      {
+        "material_id": "mat_1",
+        "is_used": true,
+        "cuts": [
+          {
+            "spec_l": 2.0,
+            "quantity": 6
+          }
+        ]
+      },
+      {
+        "material_id": "mat_2",
+        "is_used": true,
+        "cuts": [
+          {
+            "spec_l": 2.0,
+            "quantity": 6
+          }
+        ]
+      },
+      {
+        "material_id": "mat_3",
+        "is_used": true,
+        "cuts": [
+          {
+            "spec_l": 2.0,
+            "quantity": 6
+          }
+        ]
+      },
+      {
+        "material_id": "mat_4",
+        "is_used": true,
+        "cuts": [
+          {
+            "spec_l": 2.0,
+            "quantity": 6
+          }
+        ]
+      },
+      {
+        "material_id": "mat_5",
+        "is_used": true,
+        "cuts": [
+          {
+            "spec_l": 2.0,
+            "quantity": 6
+          }
+        ]
+      },
+      {
+        "material_id": "mat_6",
+        "is_used": true,
+        "cuts": [
+          {
+            "spec_l": 2.0,
+            "quantity": 6
+          }
+        ]
+      },
+      {
+        "material_id": "mat_7",
+        "is_used": true,
+        "cuts": [
+          {
+            "spec_l": 2.0,
+            "quantity": 6
+          }
+        ]
+      },
+      {
+        "material_id": "mat_8",
+        "is_used": true,
+        "cuts": [
+          {
+            "spec_l": 2.0,
+            "quantity": 6
+          }
+        ]
+      },
+      {
+        "material_id": "mat_9",
+        "is_used": true,
+        "cuts": [
+          {
+            "spec_l": 2.0,
+            "quantity": 6
+          }
+        ]
+      },
+      {
+        "material_id": "mat_10",
+        "is_used": true,
+        "cuts": [
+          {
+            "spec_l": 2.0,
+            "quantity": 6
+          }
+        ]
+      },
+      {
+        "material_id": "mat_11",
+        "is_used": true,
+        "cuts": [
+          {
+            "spec_l": 2.0,
+            "quantity": 6
+          }
+        ]
+      },
+      {
+        "material_id": "mat_12",
+        "is_used": true,
+        "cuts": [
+          {
+            "spec_l": 2.0,
+            "quantity": 6
+          }
+        ]
+      },
+      {
+        "material_id": "mat_13",
+        "is_used": true,
+        "cuts": [
+          {
+            "spec_l": 2.0,
+            "quantity": 6
+          }
+        ]
+      },
+      {
+        "material_id": "mat_14",
+        "is_used": true,
+        "cuts": [
+          {
+            "spec_l": 2.0,
+            "quantity": 6
+          }
+        ]
+      },
+      {
+        "material_id": "mat_15",
+        "is_used": true,
+        "cuts": [
+          {
+            "spec_l": 2.0,
+            "quantity": 6
+          }
+        ]
+      },
+      {
+        "material_id": "mat_16",
+        "is_used": true,
+        "cuts": [
+          {
+            "spec_l": 2.0,
+            "quantity": 6
+          }
+        ]
+      },
+      {
+        "material_id": "mat_17",
+        "is_used": true,
+        "cuts": [
+          {
+            "spec_l": 2.0,
+            "quantity": 6
+          }
+        ]
+      },
+      {
+        "material_id": "mat_18",
+        "is_used": false,
+        "cuts": []
+      },
+      {
+        "material_id": "mat_19",
+        "is_used": false,
+        "cuts": []
+      },
+      {
+        "material_id": "mat_20",
+        "is_used": false,
+        "cuts": []
+      },
+      {
+        "material_id": "mat_21",
+        "is_used": false,
+        "cuts": []
+      },
+      {
+        "material_id": "mat_22",
+        "is_used": false,
+        "cuts": []
+      }
+    ],
+    "partition_result": [
+      {
+        "panel_id": "pva_75",
+        "grid_coord": [
+          56,
+          7
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 1,
+        "inverter_id": 1
+      },
+      {
+        "panel_id": "pva_74",
+        "grid_coord": [
+          56,
+          4
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 1,
+        "inverter_id": 1
+      },
+      {
+        "panel_id": "pva_73",
+        "grid_coord": [
+          56,
+          2
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 1,
+        "inverter_id": 1
+      },
+      {
+        "panel_id": "pva_101",
+        "grid_coord": [
+          59,
+          2
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 1,
+        "inverter_id": 1
+      },
+      {
+        "panel_id": "pva_103",
+        "grid_coord": [
+          59,
+          7
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 1,
+        "inverter_id": 1
+      },
+      {
+        "panel_id": "pva_68",
+        "grid_coord": [
+          55,
+          2
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 1,
+        "inverter_id": 1
+      },
+      {
+        "panel_id": "pva_81",
+        "grid_coord": [
+          57,
+          4
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 1,
+        "inverter_id": 1
+      },
+      {
+        "panel_id": "pva_102",
+        "grid_coord": [
+          59,
+          4
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 1,
+        "inverter_id": 1
+      },
+      {
+        "panel_id": "pva_87",
+        "grid_coord": [
+          57,
+          2
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 1,
+        "inverter_id": 1
+      },
+      {
+        "panel_id": "pva_83",
+        "grid_coord": [
+          57,
+          9
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 1,
+        "inverter_id": 1
+      },
+      {
+        "panel_id": "pva_82",
+        "grid_coord": [
+          57,
+          7
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 1,
+        "inverter_id": 1
+      },
+      {
+        "panel_id": "pva_80",
+        "grid_coord": [
+          57,
+          2
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 1,
+        "inverter_id": 1
+      },
+      {
+        "panel_id": "pva_104",
+        "grid_coord": [
+          59,
+          9
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 1,
+        "inverter_id": 1
+      },
+      {
+        "panel_id": "pva_97",
+        "grid_coord": [
+          58,
+          9
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 1,
+        "inverter_id": 1
+      },
+      {
+        "panel_id": "pva_88",
+        "grid_coord": [
+          57,
+          4
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 1,
+        "inverter_id": 1
+      },
+      {
+        "panel_id": "pva_95",
+        "grid_coord": [
+          58,
+          4
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 1,
+        "inverter_id": 1
+      },
+      {
+        "panel_id": "pva_94",
+        "grid_coord": [
+          58,
+          2
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 1,
+        "inverter_id": 1
+      },
+      {
+        "panel_id": "pva_96",
+        "grid_coord": [
+          58,
+          7
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 1,
+        "inverter_id": 1
+      },
+      {
+        "panel_id": "pva_69",
+        "grid_coord": [
+          55,
+          4
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 1,
+        "inverter_id": 1
+      },
+      {
+        "panel_id": "pva_89",
+        "grid_coord": [
+          57,
+          7
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 1,
+        "inverter_id": 1
+      },
+      {
+        "panel_id": "pva_43",
+        "grid_coord": [
+          52,
+          9
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 2,
+        "inverter_id": 2
+      },
+      {
+        "panel_id": "pva_30",
+        "grid_coord": [
+          50,
+          11
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 2,
+        "inverter_id": 2
+      },
+      {
+        "panel_id": "pva_60",
+        "grid_coord": [
+          53,
+          15
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 2,
+        "inverter_id": 2
+      },
+      {
+        "panel_id": "pva_51",
+        "grid_coord": [
+          52,
+          11
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 2,
+        "inverter_id": 2
+      },
+      {
+        "panel_id": "pva_31",
+        "grid_coord": [
+          50,
+          13
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 2,
+        "inverter_id": 2
+      },
+      {
+        "panel_id": "pva_65",
+        "grid_coord": [
+          54,
+          11
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 2,
+        "inverter_id": 2
+      },
+      {
+        "panel_id": "pva_57",
+        "grid_coord": [
+          53,
+          9
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 2,
+        "inverter_id": 2
+      },
+      {
+        "panel_id": "pva_32",
+        "grid_coord": [
+          50,
+          15
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 2,
+        "inverter_id": 2
+      },
+      {
+        "panel_id": "pva_66",
+        "grid_coord": [
+          54,
+          13
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 2,
+        "inverter_id": 2
+      },
+      {
+        "panel_id": "pva_59",
+        "grid_coord": [
+          53,
+          13
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 2,
+        "inverter_id": 2
+      },
+      {
+        "panel_id": "pva_50",
+        "grid_coord": [
+          52,
+          9
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 2,
+        "inverter_id": 2
+      },
+      {
+        "panel_id": "pva_64",
+        "grid_coord": [
+          54,
+          9
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 2,
+        "inverter_id": 2
+      },
+      {
+        "panel_id": "pva_38",
+        "grid_coord": [
+          51,
+          13
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 2,
+        "inverter_id": 2
+      },
+      {
+        "panel_id": "pva_52",
+        "grid_coord": [
+          52,
+          13
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 2,
+        "inverter_id": 2
+      },
+      {
+        "panel_id": "pva_53",
+        "grid_coord": [
+          52,
+          15
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 2,
+        "inverter_id": 2
+      },
+      {
+        "panel_id": "pva_44",
+        "grid_coord": [
+          52,
+          11
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 2,
+        "inverter_id": 2
+      },
+      {
+        "panel_id": "pva_37",
+        "grid_coord": [
+          51,
+          11
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 2,
+        "inverter_id": 2
+      },
+      {
+        "panel_id": "pva_46",
+        "grid_coord": [
+          52,
+          15
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 2,
+        "inverter_id": 2
+      },
+      {
+        "panel_id": "pva_39",
+        "grid_coord": [
+          51,
+          15
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 2,
+        "inverter_id": 2
+      },
+      {
+        "panel_id": "pva_45",
+        "grid_coord": [
+          52,
+          13
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 2,
+        "inverter_id": 2
+      },
+      {
+        "panel_id": "pva_67",
+        "grid_coord": [
+          54,
+          15
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 2,
+        "inverter_id": 2
+      },
+      {
+        "panel_id": "pva_58",
+        "grid_coord": [
+          53,
+          11
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 2,
+        "inverter_id": 2
+      },
+      {
+        "panel_id": "pva_78",
+        "grid_coord": [
+          56,
+          13
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 3,
+        "inverter_id": 3
+      },
+      {
+        "panel_id": "pva_76",
+        "grid_coord": [
+          56,
+          9
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 3,
+        "inverter_id": 3
+      },
+      {
+        "panel_id": "pva_105",
+        "grid_coord": [
+          59,
+          11
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 3,
+        "inverter_id": 3
+      },
+      {
+        "panel_id": "pva_79",
+        "grid_coord": [
+          56,
+          15
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 3,
+        "inverter_id": 3
+      },
+      {
+        "panel_id": "pva_70",
+        "grid_coord": [
+          55,
+          11
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 3,
+        "inverter_id": 3
+      },
+      {
+        "panel_id": "pva_100",
+        "grid_coord": [
+          58,
+          15
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 3,
+        "inverter_id": 3
+      },
+      {
+        "panel_id": "pva_99",
+        "grid_coord": [
+          58,
+          13
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 3,
+        "inverter_id": 3
+      },
+      {
+        "panel_id": "pva_84",
+        "grid_coord": [
+          57,
+          11
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 3,
+        "inverter_id": 3
+      },
+      {
+        "panel_id": "pva_106",
+        "grid_coord": [
+          59,
+          13
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 3,
+        "inverter_id": 3
+      },
+      {
+        "panel_id": "pva_72",
+        "grid_coord": [
+          55,
+          15
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 3,
+        "inverter_id": 3
+      },
+      {
+        "panel_id": "pva_93",
+        "grid_coord": [
+          57,
+          15
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 3,
+        "inverter_id": 3
+      },
+      {
+        "panel_id": "pva_77",
+        "grid_coord": [
+          56,
+          11
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 3,
+        "inverter_id": 3
+      },
+      {
+        "panel_id": "pva_90",
+        "grid_coord": [
+          57,
+          9
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 3,
+        "inverter_id": 3
+      },
+      {
+        "panel_id": "pva_92",
+        "grid_coord": [
+          57,
+          13
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 3,
+        "inverter_id": 3
+      },
+      {
+        "panel_id": "pva_71",
+        "grid_coord": [
+          55,
+          13
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 3,
+        "inverter_id": 3
+      },
+      {
+        "panel_id": "pva_91",
+        "grid_coord": [
+          57,
+          11
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 3,
+        "inverter_id": 3
+      },
+      {
+        "panel_id": "pva_107",
+        "grid_coord": [
+          59,
+          15
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 3,
+        "inverter_id": 3
+      },
+      {
+        "panel_id": "pva_86",
+        "grid_coord": [
+          57,
+          15
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 3,
+        "inverter_id": 3
+      },
+      {
+        "panel_id": "pva_98",
+        "grid_coord": [
+          58,
+          11
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 3,
+        "inverter_id": 3
+      },
+      {
+        "panel_id": "pva_85",
+        "grid_coord": [
+          57,
+          13
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 3,
+        "inverter_id": 3
+      },
+      {
+        "panel_id": "pva_55",
+        "grid_coord": [
+          53,
+          4
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 4,
+        "inverter_id": 4
+      },
+      {
+        "panel_id": "pva_33",
+        "grid_coord": [
+          51,
+          2
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 4,
+        "inverter_id": 4
+      },
+      {
+        "panel_id": "pva_56",
+        "grid_coord": [
+          53,
+          7
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 4,
+        "inverter_id": 4
+      },
+      {
+        "panel_id": "pva_41",
+        "grid_coord": [
+          52,
+          4
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 4,
+        "inverter_id": 4
+      },
+      {
+        "panel_id": "pva_48",
+        "grid_coord": [
+          52,
+          4
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 4,
+        "inverter_id": 4
+      },
+      {
+        "panel_id": "pva_27",
+        "grid_coord": [
+          50,
+          4
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 4,
+        "inverter_id": 4
+      },
+      {
+        "panel_id": "pva_40",
+        "grid_coord": [
+          52,
+          2
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 4,
+        "inverter_id": 4
+      },
+      {
+        "panel_id": "pva_16",
+        "grid_coord": [
+          48,
+          7
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 4,
+        "inverter_id": 4
+      },
+      {
+        "panel_id": "pva_28",
+        "grid_coord": [
+          50,
+          7
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 4,
+        "inverter_id": 4
+      },
+      {
+        "panel_id": "pva_47",
+        "grid_coord": [
+          52,
+          2
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 4,
+        "inverter_id": 4
+      },
+      {
+        "panel_id": "pva_63",
+        "grid_coord": [
+          54,
+          7
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 4,
+        "inverter_id": 4
+      },
+      {
+        "panel_id": "pva_62",
+        "grid_coord": [
+          54,
+          4
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 4,
+        "inverter_id": 4
+      },
+      {
+        "panel_id": "pva_61",
+        "grid_coord": [
+          54,
+          2
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 4,
+        "inverter_id": 4
+      },
+      {
+        "panel_id": "pva_35",
+        "grid_coord": [
+          51,
+          7
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 4,
+        "inverter_id": 4
+      },
+      {
+        "panel_id": "pva_29",
+        "grid_coord": [
+          50,
+          9
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 4,
+        "inverter_id": 4
+      },
+      {
+        "panel_id": "pva_42",
+        "grid_coord": [
+          52,
+          7
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 4,
+        "inverter_id": 4
+      },
+      {
+        "panel_id": "pva_26",
+        "grid_coord": [
+          50,
+          2
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 4,
+        "inverter_id": 4
+      },
+      {
+        "panel_id": "pva_21",
+        "grid_coord": [
+          49,
+          7
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 4,
+        "inverter_id": 4
+      },
+      {
+        "panel_id": "pva_36",
+        "grid_coord": [
+          51,
+          9
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 4,
+        "inverter_id": 4
+      },
+      {
+        "panel_id": "pva_34",
+        "grid_coord": [
+          51,
+          4
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 4,
+        "inverter_id": 4
+      },
+      {
+        "panel_id": "pva_54",
+        "grid_coord": [
+          53,
+          2
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 4,
+        "inverter_id": 4
+      },
+      {
+        "panel_id": "pva_49",
+        "grid_coord": [
+          52,
+          7
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 4,
+        "inverter_id": 4
+      },
+      {
+        "panel_id": "pva_24",
+        "grid_coord": [
+          49,
+          13
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 5,
+        "inverter_id": 5
+      },
+      {
+        "panel_id": "pva_22",
+        "grid_coord": [
+          49,
+          9
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 5,
+        "inverter_id": 5
+      },
+      {
+        "panel_id": "pva_1",
+        "grid_coord": [
+          44,
+          15
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 5,
+        "inverter_id": 5
+      },
+      {
+        "panel_id": "pva_8",
+        "grid_coord": [
+          46,
+          11
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 5,
+        "inverter_id": 5
+      },
+      {
+        "panel_id": "pva_4",
+        "grid_coord": [
+          45,
+          15
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 5,
+        "inverter_id": 5
+      },
+      {
+        "panel_id": "pva_13",
+        "grid_coord": [
+          47,
+          11
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 5,
+        "inverter_id": 5
+      },
+      {
+        "panel_id": "pva_12",
+        "grid_coord": [
+          47,
+          9
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 5,
+        "inverter_id": 5
+      },
+      {
+        "panel_id": "pva_19",
+        "grid_coord": [
+          48,
+          13
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 5,
+        "inverter_id": 5
+      },
+      {
+        "panel_id": "pva_6",
+        "grid_coord": [
+          46,
+          13
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 5,
+        "inverter_id": 5
+      },
+      {
+        "panel_id": "pva_25",
+        "grid_coord": [
+          49,
+          15
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 5,
+        "inverter_id": 5
+      },
+      {
+        "panel_id": "pva_3",
+        "grid_coord": [
+          45,
+          13
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 5,
+        "inverter_id": 5
+      },
+      {
+        "panel_id": "pva_9",
+        "grid_coord": [
+          46,
+          13
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 5,
+        "inverter_id": 5
+      },
+      {
+        "panel_id": "pva_11",
+        "grid_coord": [
+          47,
+          7
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 5,
+        "inverter_id": 5
+      },
+      {
+        "panel_id": "pva_2",
+        "grid_coord": [
+          45,
+          11
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 5,
+        "inverter_id": 5
+      },
+      {
+        "panel_id": "pva_7",
+        "grid_coord": [
+          46,
+          15
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 5,
+        "inverter_id": 5
+      },
+      {
+        "panel_id": "pva_0",
+        "grid_coord": [
+          44,
+          13
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 5,
+        "inverter_id": 5
+      },
+      {
+        "panel_id": "pva_18",
+        "grid_coord": [
+          48,
+          11
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 5,
+        "inverter_id": 5
+      },
+      {
+        "panel_id": "pva_5",
+        "grid_coord": [
+          46,
+          11
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 5,
+        "inverter_id": 5
+      },
+      {
+        "panel_id": "pva_23",
+        "grid_coord": [
+          49,
+          11
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 5,
+        "inverter_id": 5
+      },
+      {
+        "panel_id": "pva_20",
+        "grid_coord": [
+          48,
+          15
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 5,
+        "inverter_id": 5
+      },
+      {
+        "panel_id": "pva_15",
+        "grid_coord": [
+          47,
+          15
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 5,
+        "inverter_id": 5
+      },
+      {
+        "panel_id": "pva_17",
+        "grid_coord": [
+          48,
+          9
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 5,
+        "inverter_id": 5
+      },
+      {
+        "panel_id": "pva_10",
+        "grid_coord": [
+          46,
+          15
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 5,
+        "inverter_id": 5
+      },
+      {
+        "panel_id": "pva_14",
+        "grid_coord": [
+          47,
+          13
+        ],
+        "cut_spec": [
+          2.0,
+          3.0
+        ],
+        "zone_id": 5,
+        "inverter_id": 5
+      }
+    ],
+    "zone_summary": [
+      {
+        "zone_id": 1,
+        "inverter_id": 1,
+        "pva_count": 20,
+        "perimeter": 62.0,
+        "total_power": 6.0
+      },
+      {
+        "zone_id": 2,
+        "inverter_id": 2,
+        "pva_count": 22,
+        "perimeter": 62.0,
+        "total_power": 6.6
+      },
+      {
+        "zone_id": 3,
+        "inverter_id": 3,
+        "pva_count": 20,
+        "perimeter": 62.0,
+        "total_power": 6.0
+      },
+      {
+        "zone_id": 4,
+        "inverter_id": 4,
+        "pva_count": 22,
+        "perimeter": 70.0,
+        "total_power": 6.6
+      },
+      {
+        "zone_id": 5,
+        "inverter_id": 5,
+        "pva_count": 24,
+        "perimeter": 68.0,
+        "total_power": 7.199999999999999
+      }
+    ],
+    "constraint_satisfaction": true,
+    "total_pva_count": 108,
+    "total_perimeter": 324.0,
+    "solution_quality": {
+      "perimeter_efficiency": 3.0,
+      "balance_score": 0.9352000348429385,
+      "connectivity_score": 1.0,
+      "constraint_score": 1.0,
+      "overall_score": 0.7620400069685878
+    },
+    "solver_method": "heuristic",
+    "optimization_history": [
+      {
+        "iteration": 1,
+        "lb": 18.0,
+        "ub": 342.0,
+        "gap": 324.0,
+        "feasible": true,
+        "total_perimeter": 342.0,
+        "n_cuts": 1,
+        "time": 9.835765361785889
+      },
+      {
+        "iteration": 2,
+        "lb": 18.0,
+        "ub": 342.0,
+        "gap": 324.0,
+        "feasible": true,
+        "total_perimeter": 360.0,
+        "n_cuts": 2,
+        "time": 5.131295204162598
+      },
+      {
+        "iteration": 3,
+        "lb": 18.0,
+        "ub": 342.0,
+        "gap": 324.0,
+        "feasible": true,
+        "total_perimeter": 352.0,
+        "n_cuts": 3,
+        "time": 6.857861042022705
+      },
+      {
+        "iteration": 4,
+        "lb": 18.0,
+        "ub": 340.0,
+        "gap": 322.0,
+        "feasible": true,
+        "total_perimeter": 340.0,
+        "n_cuts": 4,
+        "time": 7.916179418563843
+      },
+      {
+        "iteration": 5,
+        "lb": 18.0,
+        "ub": 340.0,
+        "gap": 322.0,
+        "feasible": true,
+        "total_perimeter": 340.0,
+        "n_cuts": 6,
+        "time": 8.85597276687622
+      },
+      {
+        "iteration": 6,
+        "lb": 18.0,
+        "ub": 340.0,
+        "gap": 322.0,
+        "feasible": true,
+        "total_perimeter": 352.0,
+        "n_cuts": 8,
+        "time": 6.568432092666626
+      },
+      {
+        "iteration": 7,
+        "lb": 18.0,
+        "ub": 340.0,
+        "gap": 322.0,
+        "feasible": true,
+        "total_perimeter": 352.0,
+        "n_cuts": 10,
+        "time": 14.511157989501953
+      },
+      {
+        "iteration": 8,
+        "lb": 18.0,
+        "ub": 340.0,
+        "gap": 322.0,
+        "feasible": true,
+        "total_perimeter": 352.0,
+        "n_cuts": 12,
+        "time": 10.562727928161621
+      },
+      {
+        "iteration": 9,
+        "lb": 18.0,
+        "ub": 340.0,
+        "gap": 322.0,
+        "feasible": true,
+        "total_perimeter": 352.0,
+        "n_cuts": 14,
+        "time": 12.190711498260498
+      },
+      {
+        "iteration": 10,
+        "lb": 18.0,
+        "ub": 324.0,
+        "gap": 306.0,
+        "feasible": true,
+        "total_perimeter": 324.0,
+        "n_cuts": 15,
+        "time": 9.890283107757568
+      }
+    ]
+  },
+  "equipment_selection": [
+    {
+      "transformer_id": "box_0",
+      "Q_box": 1600,
+      "install_coord": [
+        90.0,
+        530.0
+      ],
+      "connected_inverters": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "cost": {
+        "purchase": 30.0,
+        "installation": 5.0
+      }
+    }
+  ],
+  "cable_routes": [
+    {
+      "route_id": "route_41",
+      "from_device": 1,
+      "to_device": "box_0",
+      "path_coords": [
+        [
+          50.0,
+          570.0
+        ],
+        [
+          60.0,
+          570.0
+        ],
+        [
+          70.0,
+          570.0
+        ],
+        [
+          80.0,
+          570.0
+        ],
+        [
+          90.0,
+          570.0
+        ],
+        [
+          90.0,
+          560.0
+        ],
+        [
+          90.0,
+          550.0
+        ],
+        [
+          90.0,
+          540.0
+        ],
+        [
+          90.0,
+          530.0
+        ]
+      ],
+      "cable_type": "35kV AC",
+      "length": 80.0,
+      "is_cotrench": false,
+      "trench_id": "trench_76",
+      "cost": {
+        "cable": 0.28,
+        "trenching": 2.7667
+      }
+    },
+    {
+      "route_id": "route_42",
+      "from_device": 2,
+      "to_device": "box_0",
+      "path_coords": [
+        [
+          120.0,
+          520.0
+        ],
+        [
+          110.0,
+          520.0
+        ],
+        [
+          100.0,
+          520.0
+        ],
+        [
+          90.0,
+          520.0
+        ],
+        [
+          90.0,
+          530.0
+        ]
+      ],
+      "cable_type": "35kV AC",
+      "length": 40.0,
+      "is_cotrench": false,
+      "trench_id": "trench_70",
+      "cost": {
+        "cable": 0.14,
+        "trenching": 2.7667
+      }
+    },
+    {
+      "route_id": "route_43",
+      "from_device": 3,
+      "to_device": "box_0",
+      "path_coords": [
+        [
+          130.0,
+          570.0
+        ],
+        [
+          120.0,
+          570.0
+        ],
+        [
+          110.0,
+          570.0
+        ],
+        [
+          100.0,
+          570.0
+        ],
+        [
+          90.0,
+          570.0
+        ],
+        [
+          90.0,
+          560.0
+        ],
+        [
+          90.0,
+          550.0
+        ],
+        [
+          90.0,
+          540.0
+        ],
+        [
+          90.0,
+          530.0
+        ]
+      ],
+      "cable_type": "35kV AC",
+      "length": 80.0,
+      "is_cotrench": false,
+      "trench_id": "trench_79",
+      "cost": {
+        "cable": 0.28,
+        "trenching": 2.7667
+      }
+    },
+    {
+      "route_id": "route_44",
+      "from_device": 4,
+      "to_device": "box_0",
+      "path_coords": [
+        [
+          50.0,
+          520.0
+        ],
+        [
+          60.0,
+          520.0
+        ],
+        [
+          70.0,
+          520.0
+        ],
+        [
+          80.0,
+          520.0
+        ],
+        [
+          90.0,
+          520.0
+        ],
+        [
+          90.0,
+          530.0
+        ]
+      ],
+      "cable_type": "35kV AC",
+      "length": 50.0,
+      "is_cotrench": false,
+      "trench_id": "trench_78",
+      "cost": {
+        "cable": 0.175,
+        "trenching": 2.7667
+      }
+    },
+    {
+      "route_id": "route_45",
+      "from_device": 5,
+      "to_device": "box_0",
+      "path_coords": [
+        [
+          120.0,
+          470.0
+        ],
+        [
+          110.0,
+          470.0
+        ],
+        [
+          100.0,
+          470.0
+        ],
+        [
+          90.0,
+          470.0
+        ],
+        [
+          90.0,
+          480.0
+        ],
+        [
+          90.0,
+          490.0
+        ],
+        [
+          90.0,
+          500.0
+        ],
+        [
+          90.0,
+          510.0
+        ],
+        [
+          90.0,
+          520.0
+        ],
+        [
+          90.0,
+          530.0
+        ]
+      ],
+      "cable_type": "35kV AC",
+      "length": 90.0,
+      "is_cotrench": false,
+      "trench_id": "trench_81",
+      "cost": {
+        "cable": 0.315,
+        "trenching": 2.7667
+      }
+    },
+    {
+      "route_id": "route_46",
+      "from_device": "box_0",
+      "to_device": "sub_01",
+      "path_coords": [
+        [
+          90.0,
+          530.0
+        ],
+        [
+          80.0,
+          530.0
+        ],
+        [
+          70.0,
+          530.0
+        ],
+        [
+          60.0,
+          530.0
+        ],
+        [
+          50.0,
+          530.0
+        ],
+        [
+          40.0,
+          530.0
+        ],
+        [
+          40.0,
+          520.0
+        ],
+        [
+          40.0,
+          510.0
+        ],
+        [
+          40.0,
+          500.0
+        ],
+        [
+          40.0,
+          490.0
+        ],
+        [
+          40.0,
+          480.0
+        ],
+        [
+          40.0,
+          470.0
+        ],
+        [
+          40.0,
+          460.0
+        ],
+        [
+          40.0,
+          450.0
+        ],
+        [
+          40.0,
+          440.0
+        ],
+        [
+          40.0,
+          430.0
+        ],
+        [
+          40.0,
+          420.0
+        ],
+        [
+          40.0,
+          410.0
+        ],
+        [
+          40.0,
+          400.0
+        ],
+        [
+          40.0,
+          390.0
+        ],
+        [
+          40.0,
+          380.0
+        ],
+        [
+          40.0,
+          370.0
+        ],
+        [
+          40.0,
+          360.0
+        ],
+        [
+          40.0,
+          350.0
+        ],
+        [
+          40.0,
+          340.0
+        ],
+        [
+          40.0,
+          330.0
+        ],
+        [
+          40.0,
+          320.0
+        ],
+        [
+          40.0,
+          310.0
+        ],
+        [
+          40.0,
+          300.0
+        ],
+        [
+          40.0,
+          290.0
+        ],
+        [
+          40.0,
+          280.0
+        ],
+        [
+          40.0,
+          270.0
+        ],
+        [
+          40.0,
+          260.0
+        ],
+        [
+          40.0,
+          250.0
+        ],
+        [
+          40.0,
+          240.0
+        ],
+        [
+          40.0,
+          230.0
+        ],
+        [
+          40.0,
+          220.0
+        ],
+        [
+          40.0,
+          210.0
+        ],
+        [
+          40.0,
+          200.0
+        ],
+        [
+          40.0,
+          190.0
+        ],
+        [
+          40.0,
+          180.0
+        ],
+        [
+          40.0,
+          170.0
+        ],
+        [
+          40.0,
+          160.0
+        ],
+        [
+          40.0,
+          150.0
+        ],
+        [
+          40.0,
+          140.0
+        ],
+        [
+          40.0,
+          130.0
+        ],
+        [
+          40.0,
+          120.0
+        ],
+        [
+          40.0,
+          110.0
+        ],
+        [
+          40.0,
+          100.0
+        ],
+        [
+          40.0,
+          90.0
+        ],
+        [
+          40.0,
+          80.0
+        ],
+        [
+          40.0,
+          70.0
+        ],
+        [
+          40.0,
+          60.0
+        ],
+        [
+          40.0,
+          50.0
+        ],
+        [
+          40.0,
+          40.0
+        ],
+        [
+          35.0,
+          35.0
+        ]
+      ],
+      "cable_type": "35kV AC",
+      "length": 550.0,
+      "is_cotrench": false,
+      "trench_id": "trench_82",
+      "cost": {
+        "cable": 1.925,
+        "trenching": 2.7667
+      }
+    }
+  ],
+  "trench_summary": [
+    {
+      "trench_id": "trench_0",
+      "from_coord": [
+        40.0,
+        80.0
+      ],
+      "to_coord": [
+        40.0,
+        90.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_1",
+      "from_coord": [
+        40.0,
+        410.0
+      ],
+      "to_coord": [
+        40.0,
+        420.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_2",
+      "from_coord": [
+        40.0,
+        430.0
+      ],
+      "to_coord": [
+        40.0,
+        440.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_3",
+      "from_coord": [
+        40.0,
+        180.0
+      ],
+      "to_coord": [
+        40.0,
+        190.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_4",
+      "from_coord": [
+        50.0,
+        520.0
+      ],
+      "to_coord": [
+        60.0,
+        520.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_5",
+      "from_coord": [
+        40.0,
+        520.0
+      ],
+      "to_coord": [
+        40.0,
+        530.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_6",
+      "from_coord": [
+        40.0,
+        380.0
+      ],
+      "to_coord": [
+        40.0,
+        390.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_7",
+      "from_coord": [
+        60.0,
+        520.0
+      ],
+      "to_coord": [
+        70.0,
+        520.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_8",
+      "from_coord": [
+        40.0,
+        140.0
+      ],
+      "to_coord": [
+        40.0,
+        150.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_9",
+      "from_coord": [
+        40.0,
+        150.0
+      ],
+      "to_coord": [
+        40.0,
+        160.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_10",
+      "from_coord": [
+        40.0,
+        170.0
+      ],
+      "to_coord": [
+        40.0,
+        180.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_11",
+      "from_coord": [
+        40.0,
+        500.0
+      ],
+      "to_coord": [
+        40.0,
+        510.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_12",
+      "from_coord": [
+        40.0,
+        260.0
+      ],
+      "to_coord": [
+        40.0,
+        270.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_13",
+      "from_coord": [
+        110.0,
+        470.0
+      ],
+      "to_coord": [
+        120.0,
+        470.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_14",
+      "from_coord": [
+        40.0,
+        270.0
+      ],
+      "to_coord": [
+        40.0,
+        280.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_15",
+      "from_coord": [
+        90.0,
+        500.0
+      ],
+      "to_coord": [
+        90.0,
+        510.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_16",
+      "from_coord": [
+        90.0,
+        510.0
+      ],
+      "to_coord": [
+        90.0,
+        520.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_17",
+      "from_coord": [
+        90.0,
+        520.0
+      ],
+      "to_coord": [
+        90.0,
+        530.0
+      ],
+      "length": 10.0,
+      "cable_count": 3,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_18",
+      "from_coord": [
+        40.0,
+        340.0
+      ],
+      "to_coord": [
+        40.0,
+        350.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_19",
+      "from_coord": [
+        100.0,
+        570.0
+      ],
+      "to_coord": [
+        110.0,
+        570.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_20",
+      "from_coord": [
+        40.0,
+        290.0
+      ],
+      "to_coord": [
+        40.0,
+        300.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_21",
+      "from_coord": [
+        40.0,
+        310.0
+      ],
+      "to_coord": [
+        40.0,
+        320.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_22",
+      "from_coord": [
+        90.0,
+        540.0
+      ],
+      "to_coord": [
+        90.0,
+        550.0
+      ],
+      "length": 10.0,
+      "cable_count": 2,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_23",
+      "from_coord": [
+        90.0,
+        560.0
+      ],
+      "to_coord": [
+        90.0,
+        570.0
+      ],
+      "length": 10.0,
+      "cable_count": 2,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_24",
+      "from_coord": [
+        90.0,
+        550.0
+      ],
+      "to_coord": [
+        90.0,
+        560.0
+      ],
+      "length": 10.0,
+      "cable_count": 2,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_25",
+      "from_coord": [
+        80.0,
+        520.0
+      ],
+      "to_coord": [
+        90.0,
+        520.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_26",
+      "from_coord": [
+        40.0,
+        350.0
+      ],
+      "to_coord": [
+        40.0,
+        360.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_27",
+      "from_coord": [
+        40.0,
+        530.0
+      ],
+      "to_coord": [
+        50.0,
+        530.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_28",
+      "from_coord": [
+        80.0,
+        530.0
+      ],
+      "to_coord": [
+        90.0,
+        530.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_29",
+      "from_coord": [
+        40.0,
+        120.0
+      ],
+      "to_coord": [
+        40.0,
+        130.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_30",
+      "from_coord": [
+        70.0,
+        570.0
+      ],
+      "to_coord": [
+        80.0,
+        570.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_31",
+      "from_coord": [
+        70.0,
+        530.0
+      ],
+      "to_coord": [
+        80.0,
+        530.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_32",
+      "from_coord": [
+        40.0,
+        320.0
+      ],
+      "to_coord": [
+        40.0,
+        330.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_33",
+      "from_coord": [
+        40.0,
+        50.0
+      ],
+      "to_coord": [
+        40.0,
+        60.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_34",
+      "from_coord": [
+        40.0,
+        390.0
+      ],
+      "to_coord": [
+        40.0,
+        400.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_35",
+      "from_coord": [
+        90.0,
+        520.0
+      ],
+      "to_coord": [
+        100.0,
+        520.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_36",
+      "from_coord": [
+        40.0,
+        400.0
+      ],
+      "to_coord": [
+        40.0,
+        410.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_37",
+      "from_coord": [
+        40.0,
+        160.0
+      ],
+      "to_coord": [
+        40.0,
+        170.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_38",
+      "from_coord": [
+        40.0,
+        490.0
+      ],
+      "to_coord": [
+        40.0,
+        500.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_39",
+      "from_coord": [
+        40.0,
+        110.0
+      ],
+      "to_coord": [
+        40.0,
+        120.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_40",
+      "from_coord": [
+        40.0,
+        130.0
+      ],
+      "to_coord": [
+        40.0,
+        140.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_41",
+      "from_coord": [
+        40.0,
+        460.0
+      ],
+      "to_coord": [
+        40.0,
+        470.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_42",
+      "from_coord": [
+        40.0,
+        230.0
+      ],
+      "to_coord": [
+        40.0,
+        240.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_43",
+      "from_coord": [
+        40.0,
+        250.0
+      ],
+      "to_coord": [
+        40.0,
+        260.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_44",
+      "from_coord": [
+        90.0,
+        570.0
+      ],
+      "to_coord": [
+        100.0,
+        570.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_45",
+      "from_coord": [
+        50.0,
+        530.0
+      ],
+      "to_coord": [
+        60.0,
+        530.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_46",
+      "from_coord": [
+        90.0,
+        480.0
+      ],
+      "to_coord": [
+        90.0,
+        490.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_47",
+      "from_coord": [
+        60.0,
+        530.0
+      ],
+      "to_coord": [
+        70.0,
+        530.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_48",
+      "from_coord": [
+        40.0,
+        200.0
+      ],
+      "to_coord": [
+        40.0,
+        210.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_49",
+      "from_coord": [
+        50.0,
+        570.0
+      ],
+      "to_coord": [
+        60.0,
+        570.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_50",
+      "from_coord": [
+        40.0,
+        40.0
+      ],
+      "to_coord": [
+        40.0,
+        50.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_51",
+      "from_coord": [
+        40.0,
+        70.0
+      ],
+      "to_coord": [
+        40.0,
+        80.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_52",
+      "from_coord": [
+        80.0,
+        570.0
+      ],
+      "to_coord": [
+        90.0,
+        570.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_53",
+      "from_coord": [
+        40.0,
+        360.0
+      ],
+      "to_coord": [
+        40.0,
+        370.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_54",
+      "from_coord": [
+        40.0,
+        480.0
+      ],
+      "to_coord": [
+        40.0,
+        490.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_55",
+      "from_coord": [
+        40.0,
+        330.0
+      ],
+      "to_coord": [
+        40.0,
+        340.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_56",
+      "from_coord": [
+        40.0,
+        90.0
+      ],
+      "to_coord": [
+        40.0,
+        100.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_57",
+      "from_coord": [
+        100.0,
+        470.0
+      ],
+      "to_coord": [
+        110.0,
+        470.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_58",
+      "from_coord": [
+        40.0,
+        100.0
+      ],
+      "to_coord": [
+        40.0,
+        110.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_59",
+      "from_coord": [
+        40.0,
+        420.0
+      ],
+      "to_coord": [
+        40.0,
+        430.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_60",
+      "from_coord": [
+        40.0,
+        440.0
+      ],
+      "to_coord": [
+        40.0,
+        450.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_61",
+      "from_coord": [
+        40.0,
+        190.0
+      ],
+      "to_coord": [
+        40.0,
+        200.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_62",
+      "from_coord": [
+        40.0,
+        450.0
+      ],
+      "to_coord": [
+        40.0,
+        460.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_63",
+      "from_coord": [
+        40.0,
+        210.0
+      ],
+      "to_coord": [
+        40.0,
+        220.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_64",
+      "from_coord": [
+        40.0,
+        220.0
+      ],
+      "to_coord": [
+        40.0,
+        230.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_65",
+      "from_coord": [
+        120.0,
+        570.0
+      ],
+      "to_coord": [
+        130.0,
+        570.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_66",
+      "from_coord": [
+        110.0,
+        520.0
+      ],
+      "to_coord": [
+        120.0,
+        520.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_67",
+      "from_coord": [
+        90.0,
+        470.0
+      ],
+      "to_coord": [
+        90.0,
+        480.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_68",
+      "from_coord": [
+        35.0,
+        35.0
+      ],
+      "to_coord": [
+        40.0,
+        40.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_69",
+      "from_coord": [
+        40.0,
+        510.0
+      ],
+      "to_coord": [
+        40.0,
+        520.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_70",
+      "from_coord": [
+        100.0,
+        520.0
+      ],
+      "to_coord": [
+        110.0,
+        520.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_71",
+      "from_coord": [
+        40.0,
+        470.0
+      ],
+      "to_coord": [
+        40.0,
+        480.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_72",
+      "from_coord": [
+        40.0,
+        280.0
+      ],
+      "to_coord": [
+        40.0,
+        290.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_73",
+      "from_coord": [
+        40.0,
+        300.0
+      ],
+      "to_coord": [
+        40.0,
+        310.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_74",
+      "from_coord": [
+        40.0,
+        240.0
+      ],
+      "to_coord": [
+        40.0,
+        250.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_75",
+      "from_coord": [
+        90.0,
+        530.0
+      ],
+      "to_coord": [
+        90.0,
+        540.0
+      ],
+      "length": 10.0,
+      "cable_count": 2,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_76",
+      "from_coord": [
+        60.0,
+        570.0
+      ],
+      "to_coord": [
+        70.0,
+        570.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_77",
+      "from_coord": [
+        90.0,
+        490.0
+      ],
+      "to_coord": [
+        90.0,
+        500.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_78",
+      "from_coord": [
+        70.0,
+        520.0
+      ],
+      "to_coord": [
+        80.0,
+        520.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_79",
+      "from_coord": [
+        110.0,
+        570.0
+      ],
+      "to_coord": [
+        120.0,
+        570.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_80",
+      "from_coord": [
+        40.0,
+        370.0
+      ],
+      "to_coord": [
+        40.0,
+        380.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_81",
+      "from_coord": [
+        90.0,
+        470.0
+      ],
+      "to_coord": [
+        100.0,
+        470.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    },
+    {
+      "trench_id": "trench_82",
+      "from_coord": [
+        40.0,
+        60.0
+      ],
+      "to_coord": [
+        40.0,
+        70.0
+      ],
+      "length": 10.0,
+      "cable_count": 1,
+      "cost": 0.2
+    }
+  ],
+  "constraint_satisfaction": {
+    "trench_cable_count": true,
+    "transformer_capacity": true,
+    "route_continuity": true,
+    "cable_ampacity": true,
+    "共沟约束": "100%",
+    "箱变容量": "100%"
+  },
+  "total_cost": 59.71
+}
