@@ -397,4 +397,108 @@ class Module2Visualizer:
         conv = module2_output.get("convergence_history", [])
         if conv:
             self.plot_convergence(conv, instance_id)
+
+        # B&B 树摘要（如果有）
+        bb = module2_output.get("bb_summary", {})
+        perf = module2_output.get("perf_stats", {})
+        if perf:
+            self.plot_performance_breakdown(perf, instance_id)
+
         print(f"==== 模块二可视化完成 ====")
+
+    # ================================================================
+    #  7. 性能分解图
+    # ================================================================
+    def plot_performance_breakdown(self, perf_stats: Dict, instance_id: str = ""):
+        """绘制求解过程各阶段耗时分解图"""
+        labels = ["RMP求解", "定价子问题", "拉格朗日松弛", "B&B搜索", "其它"]
+        rmp_t = perf_stats.get("rmp_time", 0)
+        price_t = perf_stats.get("pricing_time", 0)
+        lr_t = perf_stats.get("lagrangian_time", 0)
+        bb_t = perf_stats.get("bb_time", 0)
+        total_t = max(perf_stats.get("total_time", 1), 0.001)
+        other_t = max(0, total_t - rmp_t - price_t - lr_t - bb_t)
+        values = [rmp_t, price_t, lr_t, bb_t, other_t]
+
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+
+        # Pie chart
+        colors = ["#4e79a7", "#f28e2b", "#e15759", "#76b7b2", "#cccccc"]
+        nonzero_idx = [i for i, v in enumerate(values) if v > 0.001]
+        if nonzero_idx:
+            ax1.pie([values[i] for i in nonzero_idx],
+                    labels=[labels[i] for i in nonzero_idx],
+                    colors=[colors[i] for i in nonzero_idx],
+                    autopct="%1.1f%%", startangle=90)
+        ax1.set_title(f"求解耗时分解（算例: {instance_id}）\n总时间: {total_t:.1f}s")
+
+        # Stats bar chart
+        stat_labels = ["CG迭代数", "B&B节点数", "活跃路径数"]
+        stat_values = [
+            perf_stats.get("cg_iterations", 0),
+            perf_stats.get("bb_nodes", 0),
+            0,  # placeholder
+        ]
+        ax2.barh(stat_labels, stat_values, color=["#4e79a7", "#76b7b2", "#f28e2b"])
+        ax2.set_xlabel("数量")
+        ax2.set_title(f"求解统计指标（算例: {instance_id}）")
+        for i, v in enumerate(stat_values):
+            ax2.text(v + 0.5, i, str(v), va="center", fontsize=10)
+
+        plt.tight_layout()
+        path = os.path.join(self.save_dir, f"m2_performance_{instance_id}.png")
+        plt.savefig(path, dpi=200, bbox_inches="tight")
+        plt.close()
+        print(f"性能分解图保存至: {path}")
+
+    # ================================================================
+    #  8. 策略对比雷达图
+    # ================================================================
+    def plot_strategy_radar(self, benchmark_results: List[Dict], instance_id: str = ""):
+        """
+        绘制多策略对比雷达图。
+
+        Parameters
+        ----------
+        benchmark_results : List[Dict]
+            benchmark 输出的行列表，每行含 strategy, total_cost, time_sec 等
+        """
+        strategies = list(set(r["strategy"] for r in benchmark_results
+                              if r.get("total_cost", -1) > 0))
+        if len(strategies) < 2:
+            return
+
+        # Normalize metrics to [0, 1] (lower is better for cost/time)
+        metrics = ["total_cost", "time_sec", "n_boxes"]
+        labels = ["成本(万元)", "求解时间(s)", "箱变数量"]
+
+        data = {}
+        for s in strategies:
+            row = next(r for r in benchmark_results if r["strategy"] == s)
+            data[s] = [row.get(m, 0) for m in metrics]
+
+        # Normalize
+        maxvals = [max(data[s][i] for s in strategies) or 1 for i in range(len(metrics))]
+        for s in strategies:
+            data[s] = [1 - v / mx if mx > 0 else 0 for v, mx in zip(data[s], maxvals)]
+
+        angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
+        angles += angles[:1]
+
+        fig, ax = plt.subplots(figsize=(8, 8), subplot_kw=dict(polar=True))
+        colors = ["#4e79a7", "#f28e2b", "#e15759"]
+        for idx, s in enumerate(strategies):
+            vals = data[s] + data[s][:1]
+            ax.plot(angles, vals, 'o-', linewidth=2, label=s,
+                    color=colors[idx % len(colors)])
+            ax.fill(angles, vals, alpha=0.15, color=colors[idx % len(colors)])
+
+        ax.set_xticks(angles[:-1])
+        ax.set_xticklabels(labels)
+        ax.set_title(f"策略对比（算例: {instance_id}）\n(越大越好)", fontsize=13)
+        ax.legend(loc="upper right", fontsize=9)
+
+        path = os.path.join(self.save_dir, f"m2_radar_{instance_id}.png")
+        plt.savefig(path, dpi=200, bbox_inches="tight")
+        plt.close()
+        print(f"策略对比雷达图保存至: {path}")

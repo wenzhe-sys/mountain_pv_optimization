@@ -1,7 +1,7 @@
-﻿instance_id,strategy,total_cost,n_boxes,n_routes,time_sec,constraints_ok,constraint_detail
-r1,matheuristic,16435.0,1,5,0.43,True,"{'共沟约束': '100%', '箱变容量': '100%', '路由连续性': '100%', '电缆载流量': '100%'}"
-r1,milp,16435.0,1,5,0.37,True,"{'共沟约束': '100%', '箱变容量': '100%', '路由连续性': '100%', '电缆载流量': '100%'}"
-r2,matheuristic,2735.0,1,1,0.0,True,"{'共沟约束': '100%', '箱变容量': '100%', '路由连续性': '100%', '电缆载流量': '100%'}"
-r2,milp,2735.0,1,1,0.05,True,"{'共沟约束': '100%', '箱变容量': '100%', '路由连续性': '100%', '电缆载流量': '100%'}"
-r17,matheuristic,20535.0,1,5,0.32,True,"{'共沟约束': '100%', '箱变容量': '100%', '路由连续性': '100%', '电缆载流量': '100%'}"
-r17,milp,20535.0,1,5,0.41,True,"{'共沟约束': '100%', '箱变容量': '100%', '路由连续性': '100%', '电缆载流量': '100%'}"
+﻿instance_id,strategy,total_cost,n_boxes,n_routes,time_sec,constraints_ok,constraint_detail,cg_iterations,cg_time,rmp_time,pricing_time,bb_nodes,bb_time,lagrangian_time,bb_gap,bb_lb,bb_ub
+r1,matheuristic,35.0,1,0,3.47,True,"{'trench_cable_count': True, 'transformer_capacity': True, 'route_continuity': True, 'cable_ampacity': True, '共沟约束': '100%', '箱变容量': '100%'}",0,0.0,0.0,0.0,0,0.0,0.0,,,
+r1,milp,169.86,1,61,0.42,True,"{'trench_cable_count': True, 'transformer_capacity': True, 'route_continuity': True, 'cable_ampacity': True, '共沟约束': '100%', '箱变容量': '100%'}",2,0.2,0.2,0.0,0,0.0,0.0,,,
+r1,branch_and_price,169.86,1,61,3.67,True,"{'trench_cable_count': True, 'transformer_capacity': True, 'route_continuity': True, 'cable_ampacity': True, '共沟约束': '100%', '箱变容量': '100%'}",5,0.86,0.85,0.0,9,3.5,2.64,,35.23,inf
+r2,matheuristic,35.0,1,0,0.07,True,"{'trench_cable_count': True, 'transformer_capacity': True, 'route_continuity': True, 'cable_ampacity': True, '共沟约束': '100%', '箱变容量': '100%'}",0,0.0,0.0,0.0,0,0.0,0.0,,,
+r2,milp,174.21,1,61,0.37,True,"{'trench_cable_count': True, 'transformer_capacity': True, 'route_continuity': True, 'cable_ampacity': True, '共沟约束': '100%', '箱变容量': '100%'}",2,0.19,0.19,0.0,0,0.0,0.0,,,
+r2,branch_and_price,174.21,1,61,3.77,True,"{'trench_cable_count': True, 'transformer_capacity': True, 'route_continuity': True, 'cable_ampacity': True, '共沟约束': '100%', '箱变容量': '100%'}",5,0.86,0.85,0.0,9,3.59,2.73,,35.23,inf

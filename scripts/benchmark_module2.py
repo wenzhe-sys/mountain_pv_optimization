@@ -30,8 +30,10 @@ from typing import List, Dict
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
+    # Support the new directory structure
+    sys.path.insert(0, os.path.join(project_root, "modules", "module2"))
 
-from algorithm.branch_and_price import BranchAndPrice
+from modules.module2.algorithm.branch_and_price import BranchAndPrice
 
 
 def load_data(instance_id: str):
@@ -75,7 +77,13 @@ def run_benchmark(instance_id: str, strategies: List[str],
 
             # 检查约束
             cs = result.get("constraint_satisfaction", {})
-            all_satisfied = all(v == "100%" for v in cs.values())
+            def _is_constraint_ok(v):
+                if isinstance(v, bool):
+                    return v
+                if isinstance(v, str):
+                    return v == "100%"
+                return bool(v)
+            all_satisfied = all(_is_constraint_ok(v) for v in cs.values())
 
             row = {
                 "instance_id": instance_id,
@@ -87,6 +95,23 @@ def run_benchmark(instance_id: str, strategies: List[str],
                 "constraints_ok": all_satisfied,
                 "constraint_detail": str(cs),
             }
+
+            # Capture performance stats if available
+            perf = result.get("perf_stats", {})
+            row["cg_iterations"] = perf.get("cg_iterations", 0)
+            row["cg_time"] = round(perf.get("cg_time", 0), 2)
+            row["rmp_time"] = round(perf.get("rmp_time", 0), 2)
+            row["pricing_time"] = round(perf.get("pricing_time", 0), 2)
+            row["bb_nodes"] = perf.get("bb_nodes", 0)
+            row["bb_time"] = round(perf.get("bb_time", 0), 2)
+            row["lagrangian_time"] = round(perf.get("lagrangian_time", 0), 2)
+
+            # Capture B&B summary if available
+            bb_sum = result.get("bb_summary", {})
+            row["bb_gap"] = bb_sum.get("gap", None)
+            row["bb_lb"] = round(bb_sum.get("global_lb", 0), 2) if bb_sum.get("global_lb") else None
+            row["bb_ub"] = round(bb_sum.get("global_ub", 0), 2) if bb_sum.get("global_ub") else None
+
             results.append(row)
 
             print(f"  总成本: {row['total_cost']:.2f} 万元")
