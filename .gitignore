@@ -49,4 +49,4 @@ data/models/*.pth
 # 其他
 .DS_Store
 *.pth.bak
-*.csv.bak
+*.csv.bakdata/results/

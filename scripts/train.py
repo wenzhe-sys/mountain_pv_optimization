@@ -170,13 +170,14 @@ def train(args):
         meta = agent.load_checkpoint(args.resume)
         start_epoch = meta["epoch"] + 1
         # Re-freeze S2V after loading checkpoint (requires_grad not saved)
-        for p in agent.s2v_policy.parameters():
+        for p in agent.s2v.parameters():
             p.requires_grad = False
         agent.optimizer = torch.optim.Adam(
-            agent.q_policy.parameters(), lr=args.lr
+            agent.qfunc_policy.parameters(), lr=args.lr
         )
         print(f"  ├─ 已完成轮次: {meta['epoch']}", flush=True)
-        print(f"  ├─ 最优奖励: {meta['best_reward']:.4f} (轮次 {meta['best_epoch']})", flush=True)
+        best_epoch = meta.get('best_epoch', meta['epoch'])
+        print(f"  ├─ 最优奖励: {meta['best_reward']:.4f} (轮次 {best_epoch})", flush=True)
         print(f"  ├─ S2V 已冻结，仅训练 Q 头", flush=True)
         print(f"  └─ 存档时间: {meta['save_time']}", flush=True)
 
@@ -339,9 +340,9 @@ def main():
     # 预训练参数
     parser.add_argument("--skip-pretrain", action="store_true", help="跳过行为克隆预训练")
     parser.add_argument("--skip-rl", action="store_true", help="跳过 RL 微调，仅使用 BC 模型")
-    parser.add_argument("--expert-runs", type=int, default=20, help="每算例启发式运行次数")
-    parser.add_argument("--pretrain-epochs", type=int, default=50, help="行为克隆训练轮数")
-    parser.add_argument("--n-workers", type=int, default=8, help="并行 worker 数量（利用多核CPU）")
+    parser.add_argument("--expert-runs", type=int, default=10, help="每算例启发式运行次数")
+    parser.add_argument("--pretrain-epochs", type=int, default=20, help="行为克隆训练轮数")
+    parser.add_argument("--n-workers", type=int, default=16, help="并行 worker 数量（利用多核CPU）")
     args = parser.parse_args()
 
     if args.status:

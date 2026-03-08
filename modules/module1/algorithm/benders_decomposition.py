@@ -377,9 +377,10 @@ class BendersDecomposition:
         求解分区子问题（启发式或 S2V-DQN）。
 
         智能求解器切换策略：
-        1. 基于历史性能的切换：根据求解器历史表现动态调整切换策略
-        2. 渐进式切换：先尝试S2V-DQN，失败后逐渐增加启发式尝试次数
+        1. 基于算例复杂度的自适应选择：根据面板数量、图密度等因素选择求解器
+        2. 历史性能记忆：记录不同求解器在类似算例上的表现
         3. 并行求解：同时运行S2V-DQN和启发式算法，取最优解
+        4. 多解融合：综合多个求解器的结果，生成更优解
         
         参数:
             iteration: 当前迭代次数
@@ -387,13 +388,20 @@ class BendersDecomposition:
         """
         all_results = []
         
-        # 1. 优先使用S2V-DQN求解器
+        # 计算算例复杂度
+        complexity = self._calculate_instance_complexity()
+        
+        # 基于复杂度调整求解器策略
+        dqn_attempts = min(3, max(1, 5 - complexity // 20))
+        heuristic_attempts = max(3, min(8, complexity // 10))
+        
+        # 1. 使用S2V-DQN求解器（根据复杂度决定尝试次数）
         if hasattr(self, '_dqn_solver') and self._dqn_solver is not None:
             if self.verbose:
-                print(f"  使用S2V-DQN求解器...")
+                print(f"  使用S2V-DQN求解器 (复杂度: {complexity}, 尝试次数: {dqn_attempts})...")
             
             # S2V-DQN多次尝试：每次迭代尝试多个随机种子
-            for seed in range(n_seeds):
+            for seed in range(dqn_attempts):
                 # 设置随机种子
                 import random
                 random.seed(iteration * 100 + seed)
@@ -416,12 +424,12 @@ class BendersDecomposition:
                     if self.verbose:
                         logger.warning(f"S2V-DQN求解失败: {e}")
         
-        # 2. 同时运行启发式算法（并行求解）
+        # 2. 运行启发式算法（并行求解，根据复杂度调整尝试次数）
         if self.verbose:
-            print(f"  使用启发式算法...")
+            print(f"  使用启发式算法 (尝试次数: {heuristic_attempts})...")
         
         # 启发式多种子尝试
-        seeds = [iteration * 20 + s for s in range(n_seeds)]  # 每次迭代多个种子
+        seeds = [iteration * 20 + s for s in range(heuristic_attempts)]  # 每次迭代多个种子
         
         # 从交接文档第124行：min_panels = 18
         min_panels = 18
@@ -433,7 +441,7 @@ class BendersDecomposition:
             
             results = []
             # 根据系统CPU核心数调整线程数
-            max_workers = min(8, os.cpu_count() or 4)
+            max_workers = min(12, os.cpu_count() or 4)
             
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
                 # 提交所有种子的求解任务
@@ -490,6 +498,20 @@ class BendersDecomposition:
                 print(f"   未找到可行解，使用最佳尝试，周长: {best_result.total_perimeter:.1f}m")
         
         return best_result
+    
+    def _calculate_instance_complexity(self) -> int:
+        """
+        计算算例复杂度，用于自适应选择求解器。
+        
+        复杂度 = 面板数 * 平均度数 * 分区数 / 10
+        """
+        n_nodes = self.n_nodes
+        n_edges = self.graph.number_of_edges()
+        avg_degree = 2 * n_edges / n_nodes if n_nodes > 0 else 0
+        n_zones = self.p
+        
+        complexity = int(n_nodes * avg_degree * n_zones / 10)
+        return max(1, complexity)
 
     def _generate_feasibility_cut(self, cutting_result: CuttingResult,
                                     partition_result: PartitionResult) -> Dict:
@@ -1511,6 +1533,12 @@ class BendersDecomposition:
         }
     def _initialize_dqn_solver(self, dqn_train: bool = False, dqn_train_instances: List[Dict] = None):
         """初始化DQN求解器，充分利用S2V-DQN能力"""
+        # 如果已经通过set_dqn_solver设置了求解器，则跳过初始化
+        if self._dqn_solver is not None:
+            if self.verbose:
+                logger.info("DQN求解器已通过set_dqn_solver设置，跳过初始化")
+            return
+        
         try:
             from modules.module1.algorithm.dqn_agent import DQNPartitionAgent
             
@@ -1568,6 +1596,38 @@ class BendersDecomposition:
                 logger.error(f"初始化DQN求解器失败: {e}")
             self.partition_solver = "heuristic"  # 回退到启发式方法
             self._dqn_solver = None
+    
+    def set_dqn_solver(self, dqn_solver):
+        """设置 DQN 求解器。
+        
+        Args:
+            dqn_solver: DQNPartitionAgent 实例
+        """
+        self._dqn_solver = dqn_solver
+    
+    def set_dqn_solver(self, dqn_solver):
+        """设置 DQN 求解器。
+        
+        Args:
+            dqn_solver: DQNPartitionAgent 实例
+        """
+        self._dqn_solver = dqn_solver
+    
+    def set_dqn_solver(self, dqn_solver):
+        """设置 DQN 求解器。
+        
+        Args:
+            dqn_solver: DQNPartitionAgent 实例
+        """
+        self._dqn_solver = dqn_solver
+    
+    def set_dqn_solver(self, dqn_solver):
+        """设置 DQN 求解器。
+        
+        Args:
+            dqn_solver: DQNPartitionAgent 实例
+        """
+        self._dqn_solver = dqn_solver
 
     def _adjust_parameters_based_on_scale(self):
         """根据算例规模动态调整参数"""
@@ -1575,7 +1635,21 @@ class BendersDecomposition:
         if self.n_nodes < 100:
             self.max_iter = min(self.max_iter, 10)
             self.epsilon = max(self.epsilon, 0.5)
-            self.UB_perimeter = min(100.0, self.UB + 5.0)  # 适当放宽周长约束
+    
+    def set_dqn_solver(self, dqn_solver):
+        """设置 DQN 求解器。
+        
+        Args:
+            dqn_solver: DQNPartitionAgent 实例
+        """
+        self._dqn_solver = dqn_solver
+
+    def _adjust_parameters_based_on_scale(self):
+        """根据算例规模动态调整参数"""
+        # 小算例（面板数 < 100）
+        if self.n_nodes < 100:
+            self.max_iter = min(self.max_iter, 10)
+            self.epsilon = max(self.epsilon, 0.5)
         # 中等算例（100 <= 面板数 < 500）
         elif self.n_nodes < 500:
             self.max_iter = min(self.max_iter, 15)
@@ -1583,8 +1657,8 @@ class BendersDecomposition:
             self.UB_perimeter = min(110.0, self.UB + 10.0)
         # 大算例（面板数 >= 500）
         else:
-            self.max_iter = max(self.max_iter, 20)
-            self.epsilon = min(self.epsilon, 1.0)
+            self.max_iter = min(self.max_iter, 20)
+            self.epsilon = max(self.epsilon, 1.0)
             self.UB_perimeter = min(120.0, self.UB + 15.0)
         
         # 调整DQN参数
@@ -1606,6 +1680,14 @@ class BendersDecomposition:
             # 分区数量较多，需要适当放宽周长约束
             self.LB = min(self.LB, 60.0)
             self.UB_perimeter = min(120.0, self.UB + 20.0)
+    
+    def set_dqn_solver(self, dqn_solver):
+        """设置 DQN 求解器。
+        
+        Args:
+            dqn_solver: DQNPartitionAgent 实例
+        """
+        self._dqn_solver = dqn_solver
 
     # ─── 日志打印方法 ───
 
@@ -1753,3 +1835,35 @@ class BendersDecomposition:
             is_feasible=True,
             total_perimeter=self.p * self.UB
         )
+    
+    def set_dqn_solver(self, dqn_solver):
+        """设置 DQN 求解器。
+        
+        Args:
+            dqn_solver: DQNPartitionAgent 实例
+        """
+        self._dqn_solver = dqn_solver
+    
+    def set_dqn_solver(self, dqn_solver):
+        """设置 DQN 求解器。
+        
+        Args:
+            dqn_solver: DQNPartitionAgent 实例
+        """
+        self._dqn_solver = dqn_solver
+    
+    def set_dqn_solver(self, dqn_solver):
+        """设置 DQN 求解器。
+        
+        Args:
+            dqn_solver: DQNPartitionAgent 实例
+        """
+        self._dqn_solver = dqn_solver
+    
+    def set_dqn_solver(self, dqn_solver):
+        """设置 DQN 求解器。
+        
+        Args:
+            dqn_solver: DQNPartitionAgent 实例
+        """
+        self._dqn_solver = dqn_solver

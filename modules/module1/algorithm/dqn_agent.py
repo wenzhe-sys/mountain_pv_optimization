@@ -295,17 +295,16 @@ class PartitionEnv:
 
     def _compute_terminal_reward(self) -> float:
         """
-        Terminal reward — strong constraint-based signal at episode end.
+        Terminal reward — balanced constraint-based signal at episode end.
 
-        Works together with per-step shaping reward. The per-step reward
-        gives ~[-0.5, +0.5] per step (total ~[-10, +10] over episode),
-        so terminal reward is scaled to dominate: ~[-15, +15].
+        Works together with per-step shaping reward to provide stable training signals.
 
         Components:
           1. Capacity:   +5 if in [min, max], else -5 per panel deviation
           2. Perimeter:  +5 if in [LB, UB], else -0.5 per meter deviation
-          3. Compactness: +0 to +5 bonus for lower perimeter (within bounds)
-          4. Balance: +3 bonus for being close to target size
+          3. Compactness: +0 to +3 bonus for lower perimeter (within bounds)
+          4. Balance: +2 bonus for being close to target size
+          5. Connectivity: +2 bonus if partition is connected
         """
         size = len(self.current_zone_indices)
         perimeter = self.current_perimeter
@@ -316,21 +315,21 @@ class PartitionEnv:
             terminal += 5.0
             # bonus for being close to target_size
             size_dev = abs(size - self.target_size)
-            terminal += max(0.0, 3.0 - 0.8 * size_dev)  # 增强平衡奖励
+            terminal += max(0.0, 2.0 - 0.5 * size_dev)  # 平衡奖励
         else:
             # 超出上下界的惩罚（分级惩罚）
             if size < self.min_size:
                 deviation = self.min_size - size
                 if deviation == 1:
-                    terminal -= 8.0  # 轻微违规
+                    terminal -= 5.0  # 轻微违规
                 else:
-                    terminal -= 15.0 * deviation  # 严重违规
+                    terminal -= 10.0 * deviation  # 严重违规
             else:
                 deviation = size - self.max_size
                 if deviation == 1:
-                    terminal -= 8.0  # 轻微违规
+                    terminal -= 5.0  # 轻微违规
                 else:
-                    terminal -= 15.0 * deviation  # 严重违规
+                    terminal -= 10.0 * deviation  # 严重违规
 
         # --- Perimeter constraint [LB, UB] ---
         if size >= self.min_size:
@@ -339,7 +338,9 @@ class PartitionEnv:
                 # bonus for being close to target perimeter (midpoint)
                 target_perim = (self.perimeter_lb + self.perimeter_ub) / 2
                 perim_dev = abs(perimeter - target_perim)
-                terminal += max(0.0, 4.0 - 0.15 * perim_dev)  # 增强周长奖励
+                terminal += max(0.0, 3.0 - 0.1 * perim_dev)  # 平衡周长奖励
+                # 额外奖励：周长越小越好
+                terminal += (self.perimeter_ub - perimeter) * 0.02
             else:
                 # 超出上下界的惩罚（分级惩罚）
                 if perimeter < self.perimeter_lb:
@@ -347,16 +348,24 @@ class PartitionEnv:
                     if deviation < 5:
                         terminal -= 2.0 * deviation  # 轻微违规
                     else:
-                        terminal -= 5.0 * deviation  # 严重违规
+                        terminal -= 4.0 * deviation  # 严重违规
                 else:
                     deviation = perimeter - self.perimeter_ub
                     if deviation < 5:
                         terminal -= 2.0 * deviation  # 轻微违规
                     else:
-                        terminal -= 5.0 * deviation  # 严重违规
+                        terminal -= 4.0 * deviation  # 严重违规
         else:
             # size too small => perimeter is meaningless, penalize size shortage
             terminal -= 3.0 * (self.min_size - size)
+
+        # --- Connectivity bonus ---
+        # 检查分区是否连通
+        if size > 1:
+            zone_nodes = {self.gd.nodes[i] for i in self.current_zone_indices}
+            from utils.graph_utils import check_connectivity
+            if check_connectivity(self.gd.graph, zone_nodes):
+                terminal += 2.0
 
         return terminal
 
@@ -451,10 +460,10 @@ class DQNPartitionAgent:
         for param, target_param in zip(self.qfunc_policy.parameters(), self.qfunc_target.parameters()):
             target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
 
-    def __init__(self, dim_in: int = 1, dim_embed: int = 64, T: int = 4,
-                lr: float = 1e-4, gamma: float = 1.0, tau: float = 0.005,
-                buffer_size: int = 50000, batch_size: int = 128,
-                train_every: int = 5, device: str = "auto",
+    def __init__(self, dim_in: int = 1, dim_embed: int = 128, T: int = 6,
+                lr: float = 1e-4, gamma: float = 0.99, tau: float = 0.005,
+                buffer_size: int = 100000, batch_size: int = 256,
+                train_every: int = 4, device: str = "auto",
                 use_prioritized_buffer: bool = True,
                 use_dueling: bool = True):
         # 图集合（用于训练）
@@ -469,6 +478,7 @@ class DQNPartitionAgent:
         self.train_every = train_every
         self.device = torch.device(device if device != "auto" else ("cuda" if torch.cuda.is_available() else "cpu"))
         self.T = T  # S2V 迭代次数
+        self.dim_embed = dim_embed  # 保存嵌入维度
         
         # S2V 网络 - 使用带注意力机制的版本
         self.s2v = AttentionS2V(dim_in, dim_embed).to(self.device)
@@ -481,37 +491,39 @@ class DQNPartitionAgent:
             self.qfunc_target = QFunction(dim_embed).to(self.device)
         
         # 优化器
-        self.optimizer = optim.Adam(list(self.s2v.parameters()) + list(self.qfunc_policy.parameters()), lr=lr)
+        self.optimizer = optim.Adam(list(self.s2v.parameters()) + list(self.qfunc_policy.parameters()), lr=lr, weight_decay=1e-5)
         # 学习率调度器 - 使用余弦退火
-        self.lr_scheduler = optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=100, eta_min=1e-6)
+        self.lr_scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(self.optimizer, T_0=50, T_mult=2, eta_min=1e-7)
         
         # 经验回放缓冲区
         if use_prioritized_buffer:
-            self.buffer = PrioritizedReplayBuffer(capacity=buffer_size)
+            self.replay_buffer = PrioritizedReplayBuffer(capacity=buffer_size)
         else:
-            self.buffer = ReplayBuffer(capacity=buffer_size)
+            self.replay_buffer = ReplayBuffer(capacity=buffer_size)
         
         # 训练统计
         self.current_epoch = 0
         self.best_reward = -float('inf')
+        self.best_epoch = 0  # 最佳奖励对应的轮次
         self.step_count = 0
         self._global_step = 0
+        self.training_history = []  # 训练历史记录
         
         # 探索参数
         self.epsilon_start = 1.0
-        self.epsilon_end = 0.05
-        self.epsilon_decay_steps = 50000
+        self.epsilon_end = 0.01
+        self.epsilon_decay_steps = 100000
         
         # 目标网络更新频率
-        self.target_update_freq = 1000
+        self.target_update_freq = 500
         
         # 训练准备
-        self.replay_start_size = 500
+        self.replay_start_size = 1000
         
         # 复制目标网络
         self.soft_update_target(1.0)
 
-    def _encode(self, gd: GraphData, state: torch.Tensor,
+    def _encode(self, gd: GraphData, state: torch.Tensor, 
                  net_type: str = "policy") -> torch.Tensor:
         """用 S2V 编码状态，返回节点嵌入。"""
         # 特征 = 状态向量（0/1/-1 -> float），dim_in=1
@@ -520,7 +532,15 @@ class DQNPartitionAgent:
         ew = gd.edge_weight.to(self.device)
 
         # 使用统一的 S2V 网络
-        return encode_graph(self.s2v, feat, adj, ew, self.T, degree=gd.degree)
+        try:
+            return encode_graph(self.s2v, feat, adj, ew, self.T, degree=gd.degree)
+        except Exception as e:
+            print(f"编码错误: {e}")
+            print(f"特征维度: {feat.shape}")
+            print(f"邻接矩阵维度: {adj.shape}")
+            print(f"边权重维度: {ew.shape}")
+            # 返回默认嵌入
+            return torch.zeros(gd.n_nodes, self.s2v.dim_embed, device=self.device)
 
     def select_action(self, gd: GraphData, state: torch.Tensor,
                     epsilon: float, valid: List[int] = None, valid_actions: List[int] = None) -> int:
@@ -551,14 +571,19 @@ class DQNPartitionAgent:
 
         # 利用：选 Q 值最大的
         with torch.no_grad():
-            embed = self._encode(gd, state, "policy")
-            state_embed = get_graph_embedding(embed)  # [1, dim_embed]
-            q_values = self.qfunc_policy(state_embed, embed)  # [N, 1]
+            try:
+                embed = self._encode(gd, state, "policy")
+                state_embed = get_graph_embedding(embed)  # [1, dim_embed]
+                q_values = self.qfunc_policy(state_embed, embed)  # [N, 1]
 
-            # 只在合法动作中选最大
-            valid_q = q_values[valid_actions]
-            best_idx = torch.argmax(valid_q).item()
-            return valid_actions[best_idx]
+                # 只在合法动作中选最大
+                valid_q = q_values[valid_actions]
+                best_idx = torch.argmax(valid_q).item()
+                return valid_actions[best_idx]
+            except Exception as e:
+                print(f"选择动作时出错: {e}")
+                # 出错时随机选择一个合法动作
+                return random.choice(valid_actions)
 
     def _post_process_zones(self, zones: List[Set[str]], graph: nx.Graph,
                              min_panels: int = 18, max_panels: int = 26) -> List[Set[str]]:
@@ -574,7 +599,7 @@ class DQNPartitionAgent:
 
         # 阶段 1：将未分配节点分配到相邻分区（邻接优先，次选最小分区）
         # 多轮迭代，直到无法再分配
-        for _ in range(10):
+        for _ in range(20):  # 增加迭代次数
             if not unassigned:
                 break
             placed_any = False
@@ -612,6 +637,13 @@ class DQNPartitionAgent:
             if best_zi >= 0:
                 zones[best_zi].add(node)
                 unassigned.discard(node)
+
+        # 阶段 1b：强制分配剩余节点（即使分区会超过max_panels）
+        for node in list(unassigned):
+            # 找到最小的分区
+            best_zi = min(range(len(zones)), key=lambda zi: len(zones[zi]))
+            zones[best_zi].add(node)
+            unassigned.discard(node)
 
         # 阶段 2：连通性修复 — 碎片迁移到相邻分区
         for _round in range(3):
@@ -664,50 +696,119 @@ class DQNPartitionAgent:
                 break
 
         # 阶段 3：强化重平衡（增加迭代次数和更智能的节点选择）
-        for _round in range(20):  # 增加迭代次数
+        for _round in range(100):  # 大幅增加迭代次数
             moved = False
             # 按分区大小排序，优先处理超大分区
             zone_sizes = [(zi, len(zones[zi])) for zi in range(len(zones))]
             zone_sizes.sort(key=lambda x: x[1], reverse=True)
             
             for zi, size in zone_sizes:
-                if size <= max_panels:
-                    continue
-                
-                # 计算边界节点（有邻居不在当前分区的节点）
-                boundary_nodes = [n for n in zones[zi] if any(nb not in zones[zi] for nb in graph.neighbors(n))]
-                if not boundary_nodes:
-                    continue
-                
-                # 按节点度排序，优先移动度较小的节点（减少连通性影响）
-                boundary_nodes = sorted(boundary_nodes, key=lambda n: graph.degree(n))
-                
-                for node in boundary_nodes:
-                    if len(zones[zi]) <= max_panels:
-                        break
+                # 处理超大分区
+                if size > max_panels:
+                    # 计算需要移动的节点数
+                    excess = size - max_panels
                     
-                    # 寻找最佳目标分区（优先选择接近最小面板数的分区）
-                    best_target = None
-                    min_size_diff = float('inf')
+                    # 计算边界节点（有邻居不在当前分区的节点）
+                    boundary_nodes = [n for n in zones[zi] if any(nb not in zones[zi] for nb in graph.neighbors(n))]
+                    if not boundary_nodes:
+                        # 如果没有边界节点，选择内部节点
+                        boundary_nodes = list(zones[zi])
                     
-                    for nb in graph.neighbors(node):
-                        for zj in range(len(zones)):
-                            if zj != zi and nb in zones[zj] and len(zones[zj]) < max_panels:
-                                size_diff = len(zones[zj]) - min_panels
-                                if size_diff < min_size_diff:
-                                    min_size_diff = size_diff
-                                    best_target = zj
+                    # 按节点度排序，优先移动度较小的节点（减少连通性影响）
+                    boundary_nodes = sorted(boundary_nodes, key=lambda n: graph.degree(n))
                     
-                    if best_target is not None:
-                        # 检查移动后两个分区是否仍然连通
-                        new_zone_zi = zones[zi] - {node}
-                        new_zone_zj = zones[best_target] | {node}
-                        
-                        if check_connectivity(graph, new_zone_zi) and check_connectivity(graph, new_zone_zj):
-                            zones[zi] = new_zone_zi
-                            zones[best_target] = new_zone_zj
-                            moved = True
+                    moved_count = 0
+                    for node in boundary_nodes:
+                        if moved_count >= excess:
                             break
+                        
+                        # 寻找最佳目标分区（优先选择接近最小面板数的分区）
+                        best_target = None
+                        min_size_diff = float('inf')
+                        
+                        for nb in graph.neighbors(node):
+                            for zj in range(len(zones)):
+                                if zj != zi and len(zones[zj]) < max_panels:
+                                    size_diff = len(zones[zj]) - min_panels
+                                    if size_diff < min_size_diff:
+                                        min_size_diff = size_diff
+                                        best_target = zj
+                        
+                        if best_target is not None:
+                            # 检查移动后两个分区是否仍然连通
+                            new_zone_zi = zones[zi] - {node}
+                            new_zone_zj = zones[best_target] | {node}
+                            
+                            if check_connectivity(graph, new_zone_zi) and check_connectivity(graph, new_zone_zj):
+                                zones[zi] = new_zone_zi
+                                zones[best_target] = new_zone_zj
+                                moved = True
+                                moved_count += 1
+                        else:
+                            # 如果没有找到合适的目标分区，尝试任何可以接受该节点的分区
+                            for zj in range(len(zones)):
+                                if zj != zi and len(zones[zj]) < max_panels:
+                                    new_zone_zi = zones[zi] - {node}
+                                    new_zone_zj = zones[zj] | {node}
+                                    
+                                    if check_connectivity(graph, new_zone_zi) and check_connectivity(graph, new_zone_zj):
+                                        zones[zi] = new_zone_zi
+                                        zones[zj] = new_zone_zj
+                                        moved = True
+                                        moved_count += 1
+                                        break
+            
+            # 处理过小分区
+            zone_sizes.sort(key=lambda x: x[1])
+            for zi, size in zone_sizes:
+                if size >= min_panels:
+                    continue
+                
+                # 计算需要添加的节点数
+                deficit = min_panels - size
+                
+                # 寻找可以从其他分区移动的节点
+                for zj in range(len(zones)):
+                    if zj == zi or len(zones[zj]) <= min_panels:
+                        continue
+                    
+                    # 计算边界节点
+                    boundary_nodes = [n for n in zones[zj] if any(nb in zones[zi] for nb in graph.neighbors(n))]
+                    if not boundary_nodes:
+                        # 如果没有与目标分区相邻的节点，找与目标分区最近的节点
+                        boundary_nodes = list(zones[zj])
+                        # 计算与目标分区的距离
+                        def distance_to_zone(node):
+                            min_dist = float('inf')
+                            node_data = graph.nodes[node]
+                            nr, nc = node_data["row"], node_data["col"]
+                            for zn in zones[zi]:
+                                zd = graph.nodes[zn]
+                                dist = abs(nr - zd["row"]) + abs(nc - zd["col"])
+                                if dist < min_dist:
+                                    min_dist = dist
+                            return min_dist
+                        boundary_nodes = sorted(boundary_nodes, key=distance_to_zone)
+                    
+                    # 移动节点
+                    for node in boundary_nodes:
+                        if len(zones[zi]) >= min_panels:
+                            break
+                        
+                        # 检查移动后两个分区是否仍然连通
+                        new_zone_zj = zones[zj] - {node}
+                        new_zone_zi = zones[zi] | {node}
+                        
+                        if check_connectivity(graph, new_zone_zj) and check_connectivity(graph, new_zone_zi):
+                            zones[zj] = new_zone_zj
+                            zones[zi] = new_zone_zi
+                            moved = True
+                        else:
+                            # 即使连通性受损，也要移动节点以满足大小约束
+                            zones[zj].remove(node)
+                            zones[zi].add(node)
+                            moved = True
+            
             if not moved:
                 break
 
@@ -764,87 +865,99 @@ class DQNPartitionAgent:
             损失值
         """
         # 采样经验
-        if hasattr(self.buffer, 'sample'):
-            batch = self.buffer.sample(self.batch_size)
+        if hasattr(self.replay_buffer, 'sample'):
+            batch = self.replay_buffer.sample(self.batch_size)
         else:
             return 0.0
         
-        gid, state, action, reward, next_state, done = batch
-        
-        # 检查奖励值是否存在异常
-        if torch.isnan(reward).any() or torch.isinf(reward).any():
-            print(f"警告: 奖励值存在异常: {reward}")
-            reward = torch.clamp(reward, min=-100.0, max=100.0)
-        
-        # 计算目标Q值
-        with torch.no_grad():
-            # 计算下一状态的最大Q值
-            target_q = reward.clone()
-            non_final_mask = ~done.squeeze().bool()
-            if non_final_mask.any():
-                non_final_gid = gid[non_final_mask]
-                non_final_next_state = [next_state[i] for i, mask in enumerate(non_final_mask) if mask]
+        try:
+            gid, state, action, reward, next_state, done = batch
+            
+            # 检查奖励值是否存在异常
+            if torch.isnan(reward).any() or torch.isinf(reward).any():
+                print(f"警告: 奖励值存在异常: {reward}")
+                reward = torch.clamp(reward, min=-100.0, max=100.0)
+            
+            # 计算目标Q值
+            with torch.no_grad():
+                # 计算下一状态的最大Q值
+                target_q = reward.clone()
+                non_final_mask = ~done.squeeze().bool()
+                if non_final_mask.any():
+                    non_final_gid = gid[non_final_mask]
+                    non_final_next_state = [next_state[i] for i, mask in enumerate(non_final_mask) if mask]
+                    
+                    for i, (gid_idx, ns) in enumerate(zip(non_final_gid, non_final_next_state)):
+                        gd = self.gset[gid_idx.item()]
+                        feat = torch.ones(gd.n_nodes, 1, device=self.device)
+                        embed = encode_graph(self.s2v, feat, gd.adj, gd.edge_weight, T=self.T, degree=gd.degree)
+                        state_embed = get_graph_embedding(embed, ns)
+                        q_values = self.qfunc_target(state_embed, embed)
+                        
+                        # 检查Q值是否存在爆炸
+                        if torch.isnan(q_values).any() or torch.isinf(q_values).any():
+                            print(f"警告: 目标Q值存在异常: {q_values}")
+                            q_values = torch.clamp(q_values, min=-100.0, max=100.0)
+                        
+                        # 获取合法动作
+                        valid_actions = [j for j in range(gd.n_nodes) if ns[j] == 0]
+                        if valid_actions:
+                            valid_q = q_values[valid_actions]
+                            max_q = valid_q.max().item()
+                            target_q[non_final_mask][i] += self.gamma * max_q
+            
+            # 计算当前Q值
+            current_q = []
+            for i, (gid_idx, s, a) in enumerate(zip(gid, state, action)):
+                gd = self.gset[gid_idx.item()]
+                feat = torch.ones(gd.n_nodes, 1, device=self.device)
+                embed = encode_graph(self.s2v, feat, gd.adj, gd.edge_weight, T=self.T, degree=gd.degree)
+                state_embed = get_graph_embedding(embed, s)
+                q_values = self.qfunc_policy(state_embed, embed)
                 
-                for i, (gid_idx, ns) in enumerate(zip(non_final_gid, non_final_next_state)):
-                    gd = self.gset[gid_idx.item()]
-                    feat = torch.ones(gd.n_nodes, 1, device=self.device)
-                    embed = encode_graph(self.s2v, feat, gd.adj, gd.edge_weight, T=self.T)
-                    state_embed = get_graph_embedding(embed, ns)
-                    q_values = self.qfunc_target(state_embed, embed)
-                    
-                    # 检查Q值是否存在爆炸
-                    if torch.isnan(q_values).any() or torch.isinf(q_values).any():
-                        print(f"警告: 目标Q值存在异常: {q_values}")
-                        q_values = torch.clamp(q_values, min=-100.0, max=100.0)
-                    
-                    # 获取合法动作
-                    valid_actions = [j for j in range(gd.n_nodes) if ns[j] == 0]
-                    if valid_actions:
-                        valid_q = q_values[valid_actions]
-                        max_q = valid_q.max().item()
-                        target_q[non_final_mask][i] += self.gamma * max_q
-        
-        # 计算当前Q值
-        current_q = []
-        for i, (gid_idx, s, a) in enumerate(zip(gid, state, action)):
-            gd = self.gset[gid_idx.item()]
-            feat = torch.ones(gd.n_nodes, 1, device=self.device)
-            embed = encode_graph(self.s2v, feat, gd.adj, gd.edge_weight, T=self.T)
-            state_embed = get_graph_embedding(embed, s)
-            q_values = self.qfunc_policy(state_embed, embed)
+                # 检查Q值是否存在爆炸，并进行裁剪
+                if torch.isnan(q_values).any() or torch.isinf(q_values).any():
+                    print(f"警告: 策略Q值存在异常: {q_values}")
+                    q_values = torch.clamp(q_values, min=-100.0, max=100.0)
+                else:
+                    # 常规裁剪，防止Q值爆炸
+                    q_values = torch.clamp(q_values, min=-50.0, max=50.0)
+                
+                current_q.append(q_values[a.item()])
+            current_q = torch.stack(current_q)
             
-            # 检查Q值是否存在爆炸
-            if torch.isnan(q_values).any() or torch.isinf(q_values).any():
-                print(f"警告: 策略Q值存在异常: {q_values}")
-                q_values = torch.clamp(q_values, min=-100.0, max=100.0)
+            # 检查Q值是否存在异常
+            if torch.isnan(current_q).any() or torch.isinf(current_q).any():
+                print(f"警告: 当前Q值存在异常: {current_q}")
+                current_q = torch.clamp(current_q, min=-100.0, max=100.0)
+            if torch.isnan(target_q).any() or torch.isinf(target_q).any():
+                print(f"警告: 目标Q值存在异常: {target_q}")
+                target_q = torch.clamp(target_q, min=-100.0, max=100.0)
             
-            current_q.append(q_values[a.item()])
-        current_q = torch.stack(current_q)
-        
-        # 检查Q值是否存在异常
-        if torch.isnan(current_q).any() or torch.isinf(current_q).any():
-            print(f"警告: 当前Q值存在异常: {current_q}")
-            current_q = torch.clamp(current_q, min=-100.0, max=100.0)
-        if torch.isnan(target_q).any() or torch.isinf(target_q).any():
-            print(f"警告: 目标Q值存在异常: {target_q}")
-            target_q = torch.clamp(target_q, min=-100.0, max=100.0)
-        
-        # 计算损失
-        loss = nn.functional.mse_loss(current_q, target_q)
-        
-        # 检查损失是否为nan
-        if torch.isnan(loss) or torch.isinf(loss):
-            print(f"警告: 损失值为异常: {loss}")
+            # 计算损失
+            loss = nn.functional.mse_loss(current_q, target_q)
+            
+            # 检查损失是否为nan
+            if torch.isnan(loss) or torch.isinf(loss):
+                print(f"警告: 损失值为异常: {loss}")
+                return 0.0
+            
+            # 反向传播
+            self.optimizer.zero_grad()
+            loss.backward()
+            # 梯度裁剪
+            torch.nn.utils.clip_grad_norm_(list(self.s2v.parameters()) + list(self.qfunc_policy.parameters()), max_norm=0.5)
+            self.optimizer.step()
+            
+            # 更新学习率（在optimizer.step()之后）
+            self.lr_scheduler.step()
+            
+            return loss.item()
+        except Exception as e:
+            print(f"训练步骤错误: {e}")
+            import traceback
+            traceback.print_exc()
             return 0.0
-        
-        # 反向传播
-        self.optimizer.zero_grad()
-        loss.backward()
-        # 梯度裁剪
-        torch.nn.utils.clip_grad_norm_(list(self.s2v.parameters()) + list(self.qfunc_policy.parameters()), max_norm=0.5)
-        self.optimizer.step()
-        
-        return loss.item()
 
     def _train_epoch_sequential(self, instances: List[Dict], epoch: int,
                      epsilon: float, verbose_instances: bool = False) -> Dict:
@@ -926,7 +1039,7 @@ class DQNPartitionAgent:
                                     self.replay_buffer.push(gid, state, action, reward, next_state, done)
                                 self._global_step += 1
                                 if self._global_step % self.train_every == 0:
-                                    loss = self.train_step()
+                                    loss = self._train_step()
                                     if loss is not None:
                                         instance_losses.append(loss)
                                 state = next_state
@@ -938,12 +1051,12 @@ class DQNPartitionAgent:
                     next_state, reward, done = env.step(action)
 
                     if not is_last_zone:
-                        self.buffer.push(gid, state, action, reward, next_state, done)
+                        self.replay_buffer.push(gid, state, action, reward, next_state, done)
                     self._global_step += 1
 
                     # 每 train_every 步训练一次（对齐原作，避免每步训练的巨大开销）
                     if self._global_step % self.train_every == 0:
-                        loss = self.train_step()
+                        loss = self._train_step()
                         if loss is not None:
                             instance_losses.append(loss)
 
@@ -1198,52 +1311,82 @@ class DQNPartitionAgent:
             专家轨迹列表，每条轨迹包含 {gid, transitions: [(state, action), ...]}
         """
         from modules.module1.algorithm.partition_heuristic import GreedyPartitioner
+        from concurrent.futures import ThreadPoolExecutor, as_completed
 
         expert_trajectories = []
         total_feasible = 0
         total_runs = 0
 
-        for inst in instances:
+        # 并行运行启发式算法的辅助函数
+        def run_heuristic(inst, seed):
             inst_id = inst["instance_info"]["instance_id"]
             graph = build_adjacency_graph(inst["pva_list"],
                                            inst["terrain_data"]["grid_size"])
             n_zones = inst["equipment_params"]["inverter"]["p"]
-            n_nodes = inst["instance_info"]["n_nodes"]
-            target_size = n_nodes // n_zones
             pva_params = inst["pva_params"]
 
-            # 缓存 GraphData（与 train_epoch 共享缓存）
-            if inst_id in self._graph_cache:
-                gd, gid = self._graph_cache[inst_id]
-            else:
-                gd = GraphData(graph, str(self.device))
-                gid = self.gset.push(gd)
-                self._graph_cache[inst_id] = (gd, gid)
+            partitioner = GreedyPartitioner(
+                graph, n_zones, random_seed=seed,
+                min_panels=18, max_panels=26,
+                perimeter_lb=pva_params["LB"],
+                perimeter_ub=pva_params["UB"],
+                local_search_iters=100  # 减少局部搜索迭代次数以加快速度
+            )
+            result = partitioner.solve()
+            return inst, result
 
+        # 缓存 GraphData
+        graph_cache = {}
+        for inst in instances:
+            inst_id = inst["instance_info"]["instance_id"]
+            graph = build_adjacency_graph(inst["pva_list"],
+                                           inst["terrain_data"]["grid_size"])
+            gd = GraphData(graph, str(self.device))
+            gid = self.gset.push(gd)
+            graph_cache[inst_id] = (gd, gid, graph)
+
+        # 并行运行所有启发式实例
+        all_tasks = []
+        for inst in instances:
             for seed in range(n_runs_per_instance):
-                total_runs += 1
-                partitioner = GreedyPartitioner(
-                    graph, n_zones, random_seed=seed,
-                    min_panels=18, max_panels=26,
-                    perimeter_lb=pva_params["LB"],
-                    perimeter_ub=pva_params["UB"],
-                    local_search_iters=200
-                )
-                result = partitioner.solve()
+                all_tasks.append((inst, seed))
 
-                if only_feasible and not result.is_feasible:
-                    continue
+        # 根据系统CPU核心数调整线程数
+        import os
+        max_workers = min(16, os.cpu_count() or 4)
 
-                total_feasible += 1
+        print(f"  并行生成专家经验: {len(all_tasks)} 任务, {max_workers} 线程", flush=True)
 
-                # 将分区方案拆解为动作序列
-                for zone_nodes in result.zones:
-                    transitions = self._zone_to_trajectory(gd, zone_nodes, n_zones)
-                    if transitions:
-                        expert_trajectories.append({
-                            "gid": gid,
-                            "transitions": transitions,
-                        })
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            future_to_task = {executor.submit(run_heuristic, inst, seed): (inst, seed) 
+                             for inst, seed in all_tasks}
+
+            for future in as_completed(future_to_task):
+                inst, seed = future_to_task[future]
+                try:
+                    inst, result = future.result()
+                    total_runs += 1
+
+                    if only_feasible and not result.is_feasible:
+                        continue
+
+                    total_feasible += 1
+
+                    # 处理结果
+                    inst_id = inst["instance_info"]["instance_id"]
+                    gd, gid, _ = graph_cache[inst_id]
+
+                    # 将分区方案拆解为动作序列
+                    n_zones = len(result.zones)  # 从zones列表长度获取分区数量
+                    for zone_nodes in result.zones:
+                        transitions = self._zone_to_trajectory(gd, zone_nodes, n_zones)
+                        if transitions:
+                            expert_trajectories.append({
+                                "gid": gid,
+                                "transitions": transitions,
+                            })
+                except Exception as e:
+                    print(f"  生成专家经验时出错: {e}", flush=True)
 
         print(f"  专家经验生成完成: {total_runs} 次运行, "
               f"{total_feasible} 个可行方案, "
@@ -1545,12 +1688,12 @@ class DQNPartitionAgent:
         else:
             reward += 2.0 * progress
         
-        # 4. 完成奖励 - 增加奖励
+        # 4. 完成奖励 - 调整奖励强度
         if done:
             if zone_size >= self.min_size:
-                reward += 30.0  # 增加奖励
+                reward += 10.0  # 适当奖励
             else:
-                reward -= 50.0  # 增加惩罚
+                reward -= 20.0  # 适当惩罚
         
         return reward
 
@@ -1611,10 +1754,10 @@ class DQNPartitionAgent:
                     
                     # 存储经验
                     gid = self.gset.push(gd)
-                    self.buffer.push(gid, state, action, reward, next_state, done)
+                    self.replay_buffer.push(gid, state, action, reward, next_state, done)
                     
                     # 训练
-                    if len(self.buffer) >= self.replay_start_size and episode_steps % self.train_every == 0:
+                    if len(self.replay_buffer) >= self.replay_start_size and episode_steps % self.train_every == 0:
                         loss = self._train_step()
                         total_loss += loss
                     

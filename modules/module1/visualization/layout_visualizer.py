@@ -171,3 +171,140 @@ class LayoutVisualizer:
             plt.show()
         
         plt.close()
+    
+    def compare_algorithms(self, results: Dict[str, List[Dict]], 
+                          title: str = "算法性能对比",
+                          save_path: str = None) -> None:
+        """
+        对比不同算法的性能
+        
+        Args:
+            results: 算法结果字典，键为算法名称，值为优化历史记录
+            title: 图表标题
+            save_path: 保存路径，None表示不保存
+        """
+        # 创建图形
+        plt.figure(figsize=(12, 8))
+        
+        # 为每个算法绘制曲线
+        colors = plt.cm.tab10(np.linspace(0, 1, len(results)))
+        for i, (algorithm, history) in enumerate(results.items()):
+            iterations = [h['iteration'] for h in history]
+            upper_bounds = [h['ub'] for h in history]
+            plt.plot(iterations, upper_bounds, label=algorithm, 
+                    marker='o', color=colors[i], linewidth=2)
+        
+        # 设置图表属性
+        plt.xlabel('迭代次数')
+        plt.ylabel('上界 (UB)')
+        plt.title(title)
+        plt.legend(loc='best')
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+        
+        # 保存或显示
+        if save_path:
+            plt.savefig(save_path, dpi=300, bbox_inches='tight')
+            print(f"算法对比图已保存到: {save_path}")
+        else:
+            plt.show()
+        
+        plt.close()
+    
+    def visualize_performance_radar(self, metrics: Dict[str, Dict], 
+                                   title: str = "算法性能雷达图",
+                                   save_path: str = None) -> None:
+        """
+        可视化算法性能雷达图
+        
+        Args:
+            metrics: 性能指标字典，键为算法名称，值为指标字典
+            title: 图表标题
+            save_path: 保存路径，None表示不保存
+        """
+        # 获取指标类别
+        categories = list(list(metrics.values())[0].keys())
+        N = len(categories)
+        
+        # 计算角度
+        angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()
+        angles += angles[:1]  # 闭合
+        
+        # 创建图形
+        plt.figure(figsize=(10, 10))
+        ax = plt.subplot(111, polar=True)
+        
+        # 为每个算法绘制雷达图
+        colors = plt.cm.tab10(np.linspace(0, 1, len(metrics)))
+        for i, (algorithm, values) in enumerate(metrics.items()):
+            data = list(values.values())
+            data += data[:1]  # 闭合
+            ax.plot(angles, data, linewidth=2, linestyle='solid', 
+                   label=algorithm, color=colors[i])
+            ax.fill(angles, data, alpha=0.25, color=colors[i])
+        
+        # 设置标签
+        ax.set_xticks(angles[:-1])
+        ax.set_xticklabels(categories)
+        
+        # 设置标题
+        plt.title(title, size=15, y=1.1)
+        plt.legend(loc='upper right', bbox_to_anchor=(0.1, 0.1))
+        plt.tight_layout()
+        
+        # 保存或显示
+        if save_path:
+            plt.savefig(save_path, dpi=300, bbox_inches='tight')
+            print(f"性能雷达图已保存到: {save_path}")
+        else:
+            plt.show()
+        
+        plt.close()
+    
+    def visualize_zone_details(self, zones: List[Set[str]], 
+                             zone_details: List[Dict],
+                             title: str = "分区详细信息",
+                             save_path: str = None) -> None:
+        """
+        可视化分区详细信息
+        
+        Args:
+            zones: 分区列表
+            zone_details: 分区详细信息列表
+            title: 图表标题
+            save_path: 保存路径，None表示不保存
+        """
+        # 提取数据
+        zone_ids = [detail.get('zone_id', f'zone_{i}') for i, detail in enumerate(zone_details)]
+        panel_counts = [detail.get('n_panels', len(zone)) for zone, detail in zip(zones, zone_details)]
+        perimeters = [detail.get('perimeter', 0) for detail in zone_details]
+        
+        # 创建图形
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+        
+        # 绘制面板数量
+        ax1.bar(zone_ids, panel_counts, color='skyblue')
+        ax1.set_xlabel('分区')
+        ax1.set_ylabel('面板数量')
+        ax1.set_title('各分区面板数量')
+        ax1.tick_params(axis='x', rotation=45)
+        
+        # 绘制周长
+        ax2.bar(zone_ids, perimeters, color='lightgreen')
+        ax2.set_xlabel('分区')
+        ax2.set_ylabel('周长 (m)')
+        ax2.set_title('各分区周长')
+        ax2.tick_params(axis='x', rotation=45)
+        
+        # 设置标题和布局
+        plt.suptitle(title)
+        plt.tight_layout()
+        
+        # 保存或显示
+        if save_path:
+            plt.savefig(save_path, dpi=300, bbox_inches='tight')
+            print(f"分区详细信息图已保存到: {save_path}")
+        else:
+            plt.show()
+        
+        plt.close()

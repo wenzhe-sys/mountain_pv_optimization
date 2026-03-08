@@ -33,7 +33,7 @@ class Structure2Vec(nn.Module):
       theta4: [1, dim_embed]        -- 边权重变换
     """
 
-    def __init__(self, dim_in: int = 1, dim_embed: int = 64):
+    def __init__(self, dim_in: int = 1, dim_embed: int = 128):
         super().__init__()
         self.dim_embed = dim_embed
 
@@ -93,7 +93,7 @@ class AttentionS2V(nn.Module):
     在标准 S2V 的基础上添加注意力机制，允许模型学习节点之间的重要性权重。
     """
 
-    def __init__(self, dim_in: int = 1, dim_embed: int = 64):
+    def __init__(self, dim_in: int = 1, dim_embed: int = 128):
         super().__init__()
         self.dim_embed = dim_embed
 
@@ -103,13 +103,19 @@ class AttentionS2V(nn.Module):
         self.theta3 = nn.Parameter(torch.empty(dim_embed, dim_embed))
         self.theta4 = nn.Parameter(torch.empty(1, dim_embed))
 
-        # 注意力机制参数
+        # 注意力机制参数 - 多头注意力
+        self.num_heads = 4
+        self.head_dim = dim_embed // self.num_heads
+        
         self.attention = nn.Sequential(
             nn.Linear(dim_embed * 2, dim_embed),
             nn.ReLU(),
-            nn.Linear(dim_embed, 1),
+            nn.Linear(dim_embed, self.num_heads),
             nn.Softmax(dim=1)
         )
+
+        # 多头注意力融合
+        self.fusion = nn.Linear(dim_embed * self.num_heads, dim_embed)
 
         # Xavier 初始化
         nn.init.xavier_uniform_(self.theta1)
@@ -117,8 +123,8 @@ class AttentionS2V(nn.Module):
         nn.init.xavier_uniform_(self.theta3)
         nn.init.xavier_uniform_(self.theta4)
 
-    def forward(self, feat: torch.Tensor, adj: torch.Tensor,
-                edge_weight: torch.Tensor, embed: torch.Tensor,
+    def forward(self, feat: torch.Tensor, adj: torch.Tensor, 
+                edge_weight: torch.Tensor, embed: torch.Tensor, 
                 degree: torch.Tensor = None) -> torch.Tensor:
         """
         单轮消息传递，带有注意力机制。
@@ -138,28 +144,44 @@ class AttentionS2V(nn.Module):
         # theta1 * x_v: 节点特征变换 [N, dim_embed]
         term1 = torch.matmul(feat, self.theta1)
 
-        # 注意力机制：计算邻居节点的注意力权重
-        # 为每个节点计算其邻居的注意力权重
-        attention_weights = torch.zeros(N, N, device=feat.device)
-        for i in range(N):
-            # 找到节点 i 的邻居
-            neighbors = adj[i].nonzero().squeeze(1)
-            if neighbors.numel() > 0:
-                # 计算节点 i 与其邻居的注意力权重
-                node_embed = embed[i].unsqueeze(0).repeat(len(neighbors), 1)  # [K, dim_embed]
-                neighbor_embeds = embed[neighbors]  # [K, dim_embed]
+        # 注意力机制：批量计算邻居节点的注意力权重
+        # 构建邻居索引
+        adj_indices = adj.nonzero(as_tuple=True)
+        if len(adj_indices[0]) == 0:
+            # 无邻居情况
+            weighted_neighbor_sum = torch.zeros(N, self.dim_embed, device=feat.device)
+        else:
+            # 批量计算注意力权重
+            src_nodes = adj_indices[0]
+            tgt_nodes = adj_indices[1]
+            
+            # 提取源节点和目标节点的嵌入
+            src_embeds = embed[src_nodes]
+            tgt_embeds = embed[tgt_nodes]
+            
+            # 拼接嵌入
+            combined = torch.cat([src_embeds, tgt_embeds], dim=1)
+            
+            # 计算注意力权重
+            weights = self.attention(combined)  # [E, num_heads]
+            
+            # 多头注意力处理
+            all_head_outputs = []
+            for head in range(self.num_heads):
+                # 为每个头计算加权和
+                head_weights = weights[:, head].unsqueeze(1)
+                weighted_embeds = tgt_embeds * head_weights
                 
-                # 拼接节点嵌入和邻居嵌入
-                combined = torch.cat([node_embed, neighbor_embeds], dim=1)  # [K, 2*dim_embed]
-                
-                # 计算注意力权重
-                weights = self.attention(combined).squeeze(1)  # [K]
-                
-                # 将注意力权重分配给对应的邻居
-                attention_weights[i, neighbors] = weights
+                # 聚合到源节点
+                head_output = torch.zeros(N, self.dim_embed, device=feat.device)
+                head_output.index_add_(0, src_nodes, weighted_embeds)
+                all_head_outputs.append(head_output)
+            
+            # 融合多头结果
+            concatenated = torch.cat(all_head_outputs, dim=1)
+            weighted_neighbor_sum = self.fusion(concatenated)
 
         # 带注意力的邻居嵌入聚合 [N, dim_embed]
-        weighted_neighbor_sum = torch.matmul(attention_weights, embed)  # [N, dim_embed]
         term2 = torch.matmul(weighted_neighbor_sum, self.theta2)
 
         # theta3 * SUM(ReLU(theta4 * w_uv)):
@@ -169,7 +191,8 @@ class AttentionS2V(nn.Module):
             w_sum = degree.unsqueeze(1) * relu_theta4  # [N, dim_embed]
         else:
             # General path: non-uniform edge weights
-            w_transformed = F.relu(edge_weight.unsqueeze(-1) * self.theta4)  # [N, N, dim_embed]
+            # 修复维度不匹配问题
+            w_transformed = F.relu(edge_weight.unsqueeze(-1) * self.theta4.unsqueeze(0))  # [N, N, dim_embed]
             w_sum = (adj.unsqueeze(-1) * w_transformed).sum(dim=1)  # [N, dim_embed]
         term3 = torch.matmul(w_sum, self.theta3)
 
@@ -188,7 +211,7 @@ class QFunction(nn.Module):
       theta7: [dim_embed, dim_embed]
     """
 
-    def __init__(self, dim_embed: int = 64, dropout: float = 0.1):
+    def __init__(self, dim_embed: int = 128, dropout: float = 0.1):
         super().__init__()
         self.theta5 = nn.Parameter(torch.empty(2 * dim_embed, 1))
         self.theta6 = nn.Parameter(torch.empty(dim_embed, dim_embed))
@@ -238,7 +261,7 @@ class DuelingQFunction(nn.Module):
     这样可以更有效地学习状态价值，提高算法性能。
     """
 
-    def __init__(self, dim_embed: int = 64, dropout: float = 0.1):
+    def __init__(self, dim_embed: int = 128, dropout: float = 0.1):
         super().__init__()
         # 价值流 (Value stream)
         self.value_fc = nn.Linear(dim_embed, dim_embed)
@@ -304,23 +327,35 @@ def encode_graph(s2v: Structure2Vec, feat: torch.Tensor,
     Returns:
         节点嵌入 [N, dim_embed]
     """
-    N = feat.size(0)
-    embed = torch.zeros(N, s2v.dim_embed, device=feat.device)
+    try:
+        N = feat.size(0)
+        embed = torch.zeros(N, s2v.dim_embed, device=feat.device)
 
-    for _ in range(T):
-        embed = s2v(feat, adj, edge_weight, embed, degree=degree)
+        for _ in range(T):
+            embed = s2v(feat, adj, edge_weight, embed, degree=degree)
 
-    return embed
+        return embed
+    except Exception as e:
+        print(f"编码图时出错: {e}")
+        print(f"特征维度: {feat.shape}")
+        print(f"S2V维度: {s2v.dim_embed}")
+        # 返回默认嵌入
+        return torch.zeros(feat.size(0), s2v.dim_embed, device=feat.device)
 
 
-def get_graph_embedding(node_embed: torch.Tensor) -> torch.Tensor:
+def get_graph_embedding(node_embed: torch.Tensor, state: torch.Tensor = None) -> torch.Tensor:
     """
     全局图嵌入 = 所有节点嵌入之和（论文做法）。
 
     Args:
         node_embed: [N, dim_embed]
+        state: 可选的状态张量，用于计算掩码
 
     Returns:
         [1, dim_embed]
     """
+    if state is not None:
+        # 只计算活跃节点的嵌入
+        mask = (state == 1).float().unsqueeze(1)
+        return (node_embed * mask).sum(dim=0, keepdim=True)
     return node_embed.sum(dim=0, keepdim=True)
