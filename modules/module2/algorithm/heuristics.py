@@ -12,11 +12,12 @@ logger = logging.getLogger(__name__)
 
 class MatheuristicFallback:
     def __init__(self, inverters: List[Dict], candidate_boxes: List[Tuple[float, float]], 
-                 Q_box_inv: Dict[int, int], path_factory):
+                 Q_box_inv: Dict[int, int], path_factory, substation_coord: Tuple[float, float]):
         self.inverters = inverters
         self.candidate_boxes = candidate_boxes
         self.Q_box_inv = Q_box_inv
         self.path_factory = path_factory
+        self.substation_coord = substation_coord
         
     def solve_kmeans_heuristic(self) -> Dict:
         """
@@ -40,6 +41,7 @@ class MatheuristicFallback:
         
         # 2. Assignment
         assignment = {}
+        inv_idx_by_id = {inv["id"]: idx for idx, inv in enumerate(self.inverters)}
         active_boxes = set()
         for c in range(k_clusters):
             cluster_invs = [self.inverters[i] for i in range(n_inv) if labels[i] == c]
@@ -69,7 +71,7 @@ class MatheuristicFallback:
             
             # Path Generation handling
             path_dict = self.path_factory.generate_path(
-                inv["centroid"], box_coord, path_type="inv_to_box", inv_idx=inv_id, box_idx=b_idx
+                inv["centroid"], box_coord, path_type="inv_to_box", inv_idx=inv_idx_by_id[inv_id], box_idx=b_idx
             )
             
             # Keep original path_dict fields, ensuring needed ones exist
@@ -82,11 +84,27 @@ class MatheuristicFallback:
                 # the edge lengths are maintained in self.path_factory.edges
                 if e not in edges_info:
                     edges_info[e] = self.path_factory.edges[e]
+
+        # Add one box-to-substation path per active box so fallback solutions are complete.
+        for b_idx in sorted(active_boxes):
+            box_coord = self.candidate_boxes[b_idx]
+            path_dict = self.path_factory.generate_path(
+                box_coord, self.substation_coord, path_type="box_to_sub", inv_idx=None, box_idx=b_idx
+            )
+            path_dict["id"] = f"heur_sub_{b_idx}"
+            if "box_idx" not in path_dict:
+                path_dict["box_idx"] = b_idx
+
+            columns.append(path_dict)
+            for e in path_dict["edges"]:
+                if e not in edges_info:
+                    edges_info[e] = self.path_factory.edges[e]
             
         return {
             "status": "heuristic_success",
             "assignment": assignment,
             "active_boxes": active_boxes,
             "columns": columns,
+            "active_path_ids": [p["id"] for p in columns],
             "edges_info": edges_info
         }

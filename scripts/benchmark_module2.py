@@ -58,6 +58,69 @@ def load_data(instance_id: str):
     return instance_data, m1_output
 
 
+def _extract_constraint_value(instance_data: Dict, key: str, default):
+    for c in instance_data.get("constraint_info", []):
+        if c.get("type") == key:
+            return c.get("value", default)
+    return default
+
+
+def _independent_constraint_check(result: Dict, instance_data: Dict, m1_output: Dict) -> Dict:
+    trench_max = int(_extract_constraint_value(instance_data, "trench_max_cables", 4))
+    substation_cap = int(_extract_constraint_value(
+        instance_data,
+        "substation_capacity",
+        instance_data.get("equipment_params", {}).get("substation", {}).get("Q_substation", 10**9),
+    ))
+
+    trench_summary = result.get("trench_summary", [])
+    equipment_selection = result.get("equipment_selection", [])
+    cable_routes = result.get("cable_routes", [])
+
+    trench_ok = all(int(t.get("cable_count", 0)) <= trench_max for t in trench_summary)
+
+    cap_map = {1600: 5, 3200: 10}
+    transformer_ok = True
+    for eq in equipment_selection:
+        q_box = int(eq.get("Q_box", -1))
+        inv_count = len(eq.get("connected_inverters", []))
+        if q_box not in cap_map or inv_count > cap_map[q_box]:
+            transformer_ok = False
+            break
+
+    expected_inverters = {z["inverter_id"] for z in m1_output.get("zone_summary", [])}
+    assigned = []
+    for eq in equipment_selection:
+        assigned.extend(eq.get("connected_inverters", []))
+    assigned_set = set(assigned)
+    unique_assign_ok = len(assigned) == len(assigned_set)
+    full_assign_ok = assigned_set == expected_inverters
+    substation_ok = len(assigned_set) <= substation_cap
+
+    route_nonempty_ok = True
+    for r in cable_routes:
+        coords = r.get("path_coords", [])
+        route_len = float(r.get("length", 0) or 0)
+        if route_len <= 1e-9:
+            # Zero-length route is valid when a device is co-located with its destination.
+            if len(coords) < 1:
+                route_nonempty_ok = False
+                break
+        else:
+            if len(coords) < 2:
+                route_nonempty_ok = False
+                break
+
+    return {
+        "trench_cable_count": trench_ok,
+        "transformer_capacity": transformer_ok,
+        "unique_assignment": unique_assign_ok,
+        "full_assignment": full_assign_ok,
+        "substation_capacity": substation_ok,
+        "route_nonempty": route_nonempty_ok,
+    }
+
+
 def run_benchmark(instance_id: str, strategies: List[str],
                   time_limit: int = 300) -> List[Dict]:
     """对单个算例运行指定策略并收集结果"""
@@ -85,6 +148,11 @@ def run_benchmark(instance_id: str, strategies: List[str],
                 return bool(v)
             all_satisfied = all(_is_constraint_ok(v) for v in cs.values())
 
+            independent_cs = _independent_constraint_check(result, instance_data, m1_output)
+            independent_ok = all(independent_cs.values())
+            used_fallback = bool(result.get("used_fallback", False))
+            solve_status = result.get("solve_status", result.get("status", "unknown"))
+
             row = {
                 "instance_id": instance_id,
                 "strategy": strategy,
@@ -92,8 +160,12 @@ def run_benchmark(instance_id: str, strategies: List[str],
                 "n_boxes": len(result["equipment_selection"]),
                 "n_routes": len(result["cable_routes"]),
                 "time_sec": round(elapsed, 2),
+                "used_fallback": used_fallback,
+                "solve_status": solve_status,
                 "constraints_ok": all_satisfied,
                 "constraint_detail": str(cs),
+                "constraints_ok_independent": independent_ok,
+                "constraint_detail_independent": str(independent_cs),
             }
 
             # Capture performance stats if available
@@ -117,7 +189,9 @@ def run_benchmark(instance_id: str, strategies: List[str],
             print(f"  总成本: {row['total_cost']:.2f} 万元")
             print(f"  箱变数: {row['n_boxes']}")
             print(f"  求解时间: {row['time_sec']:.2f}s")
+            print(f"  回退启发式: {'是' if used_fallback else '否'}")
             print(f"  约束满足: {'通过' if all_satisfied else '未通过'}")
+            print(f"  独立复核: {'通过' if independent_ok else '未通过'}")
 
         except Exception as e:
             print(f"  [错误] {strategy}: {e}")
@@ -128,8 +202,12 @@ def run_benchmark(instance_id: str, strategies: List[str],
                 "n_boxes": -1,
                 "n_routes": -1,
                 "time_sec": -1,
+                "used_fallback": True,
+                "solve_status": "error",
                 "constraints_ok": False,
                 "constraint_detail": str(e),
+                "constraints_ok_independent": False,
+                "constraint_detail_independent": str(e),
             })
 
     return results

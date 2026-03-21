@@ -110,20 +110,27 @@ class ResultFormatter:
 
         # === 2. active paths ===
         active_paths = []
-        # Support heuristic arrays
-        for p in column_pool:
-            p_val = alpha.get(p["id"], 0)
-            # if heuristics bypass solver, they might just specify active paths
-            if float(p_val) > 0.5 or solution.get("status") == "heuristic_success":
-                active_paths.append(p)
+        is_heuristic = solution.get("status") == "heuristic_success"
+        heuristic_ids = set(solution.get("active_path_ids", []))
+
+        if is_heuristic:
+            if not heuristic_ids and solution.get("columns"):
+                heuristic_ids = {p["id"] for p in solution.get("columns", [])}
+
+            for p in column_pool:
+                if p.get("id") in heuristic_ids:
+                    active_paths.append(p)
+
+            # Fallback: when IDs are not in column_pool, use paths carried by heuristic result directly.
+            if not active_paths and solution.get("columns"):
+                active_paths = list(solution.get("columns", []))
+        else:
+            for p in column_pool:
+                p_val = alpha.get(p["id"], 0)
+                if float(p_val) > 0.5:
+                    active_paths.append(p)
                 
         # === 3. Trench Summary and Edge Tracking ===
-        active_edges = []
-        for edge, info in edges_info.items():
-            beta_val = beta.get(edge, 0)
-            if float(beta_val) > 0.5 or solution.get("status") == "heuristic_success":
-                active_edges.append(edge)
-                
         trench_summary = []
         edge_to_paths = defaultdict(list)
         

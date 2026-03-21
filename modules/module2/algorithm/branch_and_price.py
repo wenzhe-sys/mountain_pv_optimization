@@ -102,7 +102,13 @@ class BranchAndPrice:
             c2=self.c2, 
             c3=self.c3
         )
-        self.heuristic = MatheuristicFallback(self.inverters, self.candidate_boxes, self.Q_box_inv, self.path_factory)
+        self.heuristic = MatheuristicFallback(
+            self.inverters,
+            self.candidate_boxes,
+            self.Q_box_inv,
+            self.path_factory,
+            self.substation_coord,
+        )
 
         # Performance monitoring
         self.perf_stats = {
@@ -322,6 +328,8 @@ class BranchAndPrice:
             result = self.formatter.format_results(heur_sol, self.column_manager.get_active_paths(), self.edges_info)
             result["convergence_history"] = self.convergence_history
             result["perf_stats"] = self.perf_stats
+            result["used_fallback"] = False
+            result["solve_status"] = heur_sol.get("status", "heuristic_success")
             return result
 
         # Phase 1: Initialize columns with heuristic warm start
@@ -333,13 +341,19 @@ class BranchAndPrice:
             final_sol = self.rmp_solver.build_and_solve_rmp(
                 self.inverters, self.candidate_boxes, active_cols, self.edges_info, is_relaxation=False
             )
+            used_fallback = False
+            solve_status = final_sol.get("status", "unknown")
             if final_sol["status"] == "infeasible":
                 logger.warning("MILP Infeasible, falling back to heuristic.")
                 final_sol = heur_sol
+                used_fallback = True
+                solve_status = "milp_infeasible_fallback_heuristic"
             self.perf_stats["total_time"] = time.time() - t_total
             result = self.formatter.format_results(final_sol, active_cols, self.edges_info)
             result["convergence_history"] = self.convergence_history
             result["perf_stats"] = self.perf_stats
+            result["used_fallback"] = used_fallback
+            result["solve_status"] = solve_status
             return result
 
         # ================================================================
@@ -421,13 +435,19 @@ class BranchAndPrice:
             is_relaxation=False, fixed_to_one=best_fixed_one
         )
 
+        used_fallback = False
+        solve_status = final_sol.get("status", "unknown")
         if final_sol["status"] == "infeasible":
             logger.warning("Final MILP infeasible, falling back to heuristic.")
             final_sol = heur_sol
+            used_fallback = True
+            solve_status = "branch_and_price_infeasible_fallback_heuristic"
 
         self.perf_stats["total_time"] = time.time() - t_total
         result = self.formatter.format_results(final_sol, active_cols, self.edges_info)
         result["convergence_history"] = self.convergence_history
         result["perf_stats"] = self.perf_stats
         result["bb_summary"] = summary
+        result["used_fallback"] = used_fallback
+        result["solve_status"] = solve_status
         return result

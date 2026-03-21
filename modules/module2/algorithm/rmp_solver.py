@@ -73,10 +73,19 @@ class RMPSolver:
         prob_type = pulp.LpMinimize
         prob = pulp.LpProblem("RMP", prob_type)
         cat = pulp.LpContinuous if is_relaxation else pulp.LpBinary
+        beta_cat = pulp.LpContinuous if is_relaxation else pulp.LpInteger
 
         # Variables
         alpha_vars = {path["id"]: pulp.LpVariable(f"alpha_{path['id']}", 0, 1, cat) for path in column_pool}
-        beta_vars = {edge: pulp.LpVariable(f"beta_{edge[0]}_{edge[1]}_{edge[2]}_{edge[3]}", 0, 1, cat) for edge in edges_info}
+        # beta is trench count on each edge (can exceed 1), not just a binary on/off flag.
+        beta_vars = {
+            edge: pulp.LpVariable(
+                f"beta_{edge[0]}_{edge[1]}_{edge[2]}_{edge[3]}",
+                lowBound=0,
+                cat=beta_cat,
+            )
+            for edge in edges_info
+        }
         
         gamma_vars = {}
         for inv in inverters:
