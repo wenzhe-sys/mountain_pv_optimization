@@ -44,11 +44,11 @@ class TestModel2(unittest.TestCase):
 
     def test_trench_cable_count_constraint(self):
         """测试单沟电缆数约束（≤4根，错误码E202）"""
-        # 从 constraint_info 中读取 trench_max_cables（正确值为4）
+        # 修复: 从 constraint_info 提取 N_max，而非 I_max（电流值=200）
         N_max = 4  # 默认值
         for c in self.instance.get("constraint_info", []):
-            if c["type"] == "trench_max_cables":
-                N_max = int(c["value"])
+            if isinstance(c, dict) and c.get("type") == "trench_max_cables":
+                N_max = int(c.get("value", 4))
                 break
         for trench in self.module2_output["trench_summary"]:
             with self.subTest(trench_id=trench["trench_id"], cable_count=trench["cable_count"]):
